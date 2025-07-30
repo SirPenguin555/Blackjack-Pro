@@ -1,5 +1,5 @@
-import { Card, createDeck, shuffleDeck } from '@/types/game'
-import type { GameAction } from '@/types/game'
+import type { Card, GameAction } from '@/types/game'
+import { createDeck, shuffleDeck } from '@/lib/deck'
 import { MultiplayerGameState, MultiplayerPlayer, TableSettings } from '@/types/multiplayer'
 import { 
   createHand, 
