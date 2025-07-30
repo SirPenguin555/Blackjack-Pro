@@ -23,6 +23,12 @@ export function useDynamicMusic(audioManager: AudioManager | null) {
     const adjustMusicForPhase = async () => {
       transitionInProgress.current = true
       
+      // Don't adjust volume if music is muted
+      if (audioManager.isMuted()) {
+        transitionInProgress.current = false
+        return
+      }
+      
       try {
         switch (phase) {
           case 'betting':
@@ -103,6 +109,9 @@ export function useDynamicMusic(audioManager: AudioManager | null) {
   // Handle special game events
   useEffect(() => {
     if (!audioManager || !mainPlayer || gameMode === 'tutorial') return
+    
+    // Don't adjust volume if music is muted
+    if (audioManager.isMuted()) return
 
     const handleSpecialEvents = async () => {
       // Check for blackjack
