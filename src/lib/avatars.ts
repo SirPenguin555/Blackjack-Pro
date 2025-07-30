@@ -26,28 +26,13 @@ export function getAvatarForName(name: string): string {
 }
 
 /**
- * Generate an avatar component with emoji and fallback
+ * Get size classes for avatar styling
  */
-export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
-  const emoji = getAvatarForName(name)
-  
+export function getAvatarSizeClasses(size: 'sm' | 'md' | 'lg') {
   const sizeClasses = {
     sm: 'w-6 h-6 text-sm',
     md: 'w-8 h-8 text-base',
     lg: 'w-12 h-12 text-xl'
   }
-  
-  return (
-    <div className={`
-      ${sizeClasses[size]} 
-      bg-gradient-to-br from-green-400 to-green-600 
-      rounded-full 
-      flex items-center justify-center 
-      text-white font-bold
-      shadow-lg
-      border-2 border-white
-    `}>
-      <span className="drop-shadow-sm">{emoji}</span>
-    </div>
-  )
+  return sizeClasses[size]
 }

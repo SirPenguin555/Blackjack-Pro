@@ -7,7 +7,7 @@ import { Hand } from './Hand'
 import { ChipSelector } from './ChipSelector'
 import { GameActions } from './GameActions'
 import { CHIP_DENOMINATIONS } from '@/store/gameStore'
-import { Avatar } from '@/lib/avatars'
+import { Avatar } from './Avatar'
 
 interface MultiplayerGameProps {
   onBack: () => void
