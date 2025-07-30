@@ -41,7 +41,7 @@ export interface GameState {
 
 export type GameAction = 'hit' | 'stand' | 'double' | 'split'
 
-export type GameMode = 'menu' | 'normal' | 'tutorial' | 'easy' | 'stats' | 'reset' | 'help'
+export type GameMode = 'menu' | 'normal' | 'tutorial' | 'easy' | 'stats' | 'reset' | 'help' | 'multiplayer'
 
 export interface ChipDenomination {
   value: number

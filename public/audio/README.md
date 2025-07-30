@@ -56,6 +56,28 @@ Some sources for royalty-free casino/ambient music:
 - YouTube Audio Library
 - Incompetech.com
 
+## Sound Effects Integration
+
+The game includes comprehensive sound effects that are triggered automatically during gameplay:
+
+### Card Sounds
+- **Card Deal**: Played when dealing initial cards or hitting
+- **Card Flip**: Played when dealer reveals hole card
+
+### Chip Sounds  
+- **Chip Place**: Played when placing bets
+- **Chip Stack**: Played when receiving loans
+- **Chip Collect**: Played after winning hands
+
+### Outcome Sounds
+- **Win**: Regular win sound
+- **Blackjack**: Special blackjack win sound  
+- **Push**: Tie/push sound
+- **Lose**: Loss sound
+- **Bust**: Player bust sound
+
+All sound effects are played automatically based on game events and respect the user's sound effects volume and mute preferences.
+
 ## Note
 
 The audio system is designed to gracefully handle missing audio files. If no audio files are present, the game will still function normally with audio controls disabled.

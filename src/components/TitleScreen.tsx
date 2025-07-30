@@ -49,6 +49,13 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
             <div className="text-sm opacity-80">With strategy hints and tips</div>
           </button>
 
+          <button
+            onClick={() => onModeSelect('multiplayer')}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+          >
+            <div className="text-xl">Multiplayer</div>
+            <div className="text-sm opacity-90">Play with friends online</div>
+          </button>
 
           <button
             onClick={() => onModeSelect('stats')}

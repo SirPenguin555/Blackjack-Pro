@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useGameStore, CHIP_DENOMINATIONS } from '@/store/gameStore'
+import { GameAction } from '@/types/game'
 import { Hand } from './Hand'
 import { ChipSelector } from './ChipSelector'
 import { GameActions } from './GameActions'
@@ -15,7 +16,10 @@ import { StrategyHint } from './StrategyHint'
 import { HelpScreen } from './HelpScreen'
 import { SplitHand } from './SplitHand'
 import { AudioControls } from './AudioControls'
+import { MultiplayerLobby } from './MultiplayerLobby'
 import { useAudio } from '@/hooks/useAudio'
+import { useGameSounds } from '@/hooks/useGameSounds'
+import { getSoundService } from '@/lib/audio/SoundService'
 
 export function BlackjackGame() {
   const {
@@ -49,6 +53,13 @@ export function BlackjackGame() {
   
   // Audio system
   const { audioManager } = useAudio()
+  const soundService = getSoundService()
+  useGameSounds() // Hook that monitors game state and plays outcome sounds
+  
+  // Initialize sound service with audio manager
+  useEffect(() => {
+    soundService.setAudioManager(audioManager)
+  }, [audioManager, soundService])
   
   // Auto-start background music on first user interaction (muted by default)
   useEffect(() => {
@@ -93,6 +104,8 @@ export function BlackjackGame() {
   const handleBetChange = (amount: number) => {
     if (mainPlayer && phase === 'betting') {
       placeBet(mainPlayer.id, amount)
+      // Play chip placement sound
+      soundService.playChipPlace()
     }
   }
 
@@ -102,7 +115,7 @@ export function BlackjackGame() {
     }
   }
 
-  const handlePlayerAction = (action: any) => {
+  const handlePlayerAction = (action: GameAction) => {
     if (currentPlayer) {
       playerAction(currentPlayer.id, action)
     }
@@ -143,6 +156,8 @@ export function BlackjackGame() {
 
   const handleTakeLoan = () => {
     takeLoan()
+    // Play chip stacking sound for receiving loan money
+    soundService.playChipStack()
   }
 
   // Tutorial logic
@@ -200,6 +215,15 @@ export function BlackjackGame() {
   if (gameMode === 'help') {
     return (
       <HelpScreen
+        onBack={() => setGameMode('menu')}
+      />
+    )
+  }
+
+  // Show multiplayer lobby if in multiplayer mode
+  if (gameMode === 'multiplayer') {
+    return (
+      <MultiplayerLobby
         onBack={() => setGameMode('menu')}
       />
     )

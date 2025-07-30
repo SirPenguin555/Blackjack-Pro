@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AudioManager } from '@/lib/audio/AudioManager'
-import { AudioTrack } from '@/lib/audio/types'
+import { AudioTrack, SoundEffect } from '@/lib/audio/types'
 
 const CASINO_TRACKS: AudioTrack[] = [
   {
@@ -11,6 +11,74 @@ const CASINO_TRACKS: AudioTrack[] = [
     url: '/audio/casino-ambient.mp3' // We'll add this audio file later
   }
   // We can add more tracks here in the future
+]
+
+const SOUND_EFFECTS: SoundEffect[] = [
+  // Card sounds
+  {
+    id: 'card-deal',
+    name: 'Card Deal',
+    category: 'card',
+    url: '/audio/card-deal.mp3'
+  },
+  {
+    id: 'card-flip',
+    name: 'Card Flip',
+    category: 'card',
+    url: '/audio/card-flip.mp3'
+  },
+  
+  // Chip sounds
+  {
+    id: 'chip-place',
+    name: 'Chip Place',
+    category: 'chip',
+    url: '/audio/chip-place.mp3'
+  },
+  {
+    id: 'chip-stack',
+    name: 'Chip Stack',
+    category: 'chip',
+    url: '/audio/chip-stack.mp3'
+  },
+  {
+    id: 'chip-collect',
+    name: 'Chip Collect',
+    category: 'chip',
+    url: '/audio/chip-collect.mp3'
+  },
+  
+  // Outcome sounds
+  {
+    id: 'win',
+    name: 'Win',
+    category: 'outcome',
+    url: '/audio/win.mp3'
+  },
+  {
+    id: 'lose',
+    name: 'Lose',
+    category: 'outcome',
+    url: '/audio/lost.mp3'
+  },
+  {
+    id: 'blackjack',
+    name: 'Blackjack',
+    category: 'outcome',
+    url: '/audio/blackjack.mp3'
+  },
+  {
+    id: 'push',
+    name: 'Push',
+    category: 'outcome',
+    url: '/audio/draw.mp3'
+  },
+  {
+    id: 'bust',
+    name: 'Bust',
+    category: 'outcome',
+    url: '/audio/bust.mp3'
+  }
 ]
 
 export function useAudio() {
@@ -40,7 +108,7 @@ export function useAudio() {
 
     audioManager.on('error', handleError)
 
-    // Initialize and load default track
+    // Initialize and load default track and sound effects
     const initializeAudio = async () => {
       try {
         await audioManager.initialize()
@@ -54,6 +122,16 @@ export function useAudio() {
             // If we can't load the track, that's okay - just log it
             console.warn('Could not load audio track:', loadError)
             setError('Audio track not available')
+          }
+        }
+        
+        // Load sound effects (silently fail if not available)
+        for (const soundEffect of SOUND_EFFECTS) {
+          try {
+            await audioManager.loadSoundEffect(soundEffect)
+          } catch (loadError) {
+            // Silently ignore sound effect loading errors
+            console.warn(`Could not load sound effect ${soundEffect.id}:`, loadError)
           }
         }
         
@@ -79,6 +157,7 @@ export function useAudio() {
     isInitialized,
     currentTrack,
     error,
-    availableTracks: CASINO_TRACKS
+    availableTracks: CASINO_TRACKS,
+    availableSoundEffects: SOUND_EFFECTS
   }
 }
