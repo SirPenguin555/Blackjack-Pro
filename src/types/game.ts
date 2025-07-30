@@ -28,6 +28,7 @@ export interface Player {
   position: number
   lastHandWinnings?: number
   isPlayingMainHand?: boolean // Track which hand is active in split
+  splitCount?: number // Track number of splits for rule validation
 }
 
 export interface GameState {
@@ -37,6 +38,7 @@ export interface GameState {
   currentPlayerIndex: number
   phase: 'betting' | 'dealing' | 'playing' | 'dealer' | 'finished'
   round: number
+  rules?: import('../lib/ruleVariations').RuleSet
 }
 
 export type GameAction = 'hit' | 'stand' | 'double' | 'split'
@@ -67,3 +69,11 @@ export {
   TableRequirements, 
   TableTheme 
 } from '../lib/tableSystem'
+
+// Re-export rule variations types for convenience
+export {
+  GameVariant,
+  RuleSet,
+  VariationEngine,
+  RULE_CONFIGURATIONS
+} from '../lib/ruleVariations'

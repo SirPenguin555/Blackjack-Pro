@@ -9,6 +9,7 @@ import { GameActions } from './GameActions'
 import { TitleScreen } from './TitleScreen'
 import { TutorialOverlay } from './TutorialOverlay'
 import { StatsScreen } from './StatsScreen'
+import { AnalyticsDashboard } from './AnalyticsDashboard'
 import { ResetConfirmation } from './ResetConfirmation'
 import { MenuWarning } from './MenuWarning'
 import { BankruptcyScreen } from './BankruptcyScreen'
@@ -94,6 +95,9 @@ export function BlackjackGame() {
   
   // State for menu warning
   const [showMenuWarning, setShowMenuWarning] = useState(false)
+  
+  // State for analytics dashboard
+  const [showAnalytics, setShowAnalytics] = useState(false)
   
   // Check for bankruptcy - only show after a round completes, not at the start
   const isBankrupt = mainPlayer && mainPlayer.chips === 0 && mainPlayer.bet === 0 && (phase === 'finished' || phase === 'betting')
@@ -290,12 +294,20 @@ export function BlackjackGame() {
         {/* Header */}
         <div className="text-center mb-4 sm:mb-6">
           <div className="relative flex justify-between items-center mb-4">
-            <button
-              onClick={handleBackToMenu}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
-            >
-              ← Menu
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={handleBackToMenu}
+                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+              >
+                ← Menu
+              </button>
+              <button
+                onClick={() => setShowAnalytics(true)}
+                className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
+              >
+                📊 Analytics
+              </button>
+            </div>
             <div className="absolute left-1/2 transform -translate-x-1/2 text-yellow-400 font-semibold text-sm sm:text-base">
               {gameMode === 'normal' ? 'Classic Mode' : 
                gameMode === 'tutorial' ? 'Tutorial Mode' : 
@@ -437,6 +449,13 @@ export function BlackjackGame() {
         advice={currentStrategyAdvice}
         isVisible={gameMode === 'easy' && phase === 'playing'}
       />
+
+      {/* Analytics Dashboard */}
+      {showAnalytics && (
+        <AnalyticsDashboard
+          onClose={() => setShowAnalytics(false)}
+        />
+      )}
     </div>
   )
 }

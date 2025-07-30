@@ -1,4 +1,5 @@
 import { Card, Hand, Rank } from '@/types/game'
+import { RuleSet, getDealerAction, canPlayerSplit, getBlackjackPayout, createRuleSet, GameVariant } from './ruleVariations'
 
 export function getCardValue(rank: Rank): number {
   switch (rank) {
@@ -64,7 +65,12 @@ export function addCardToHand(hand: Hand, card: Card): Hand {
   return createHand(newCards)
 }
 
-export function canSplit(hand: Hand): boolean {
+export function canSplit(hand: Hand, rules?: RuleSet, currentSplits: number = 0): boolean {
+  if (rules) {
+    return canPlayerSplit(hand, rules, currentSplits)
+  }
+  
+  // Fallback to original logic for backward compatibility
   if (hand.cards.length !== 2) return false
   
   const [card1, card2] = hand.cards
@@ -76,8 +82,12 @@ export function canDouble(hand: Hand): boolean {
   return hand.cards.length === 2 && !hand.isBusted
 }
 
-export function shouldDealerHit(hand: Hand): boolean {
-  // Dealer hits on 16 and stands on 17
+export function shouldDealerHit(hand: Hand, rules?: RuleSet): boolean {
+  if (rules) {
+    return getDealerAction(hand, rules) === 'hit'
+  }
+  
+  // Fallback to original logic for backward compatibility (Vegas rules)
   if (hand.value < 17) return true
   if (hand.value > 17) return false
   
@@ -98,15 +108,19 @@ export function determineWinner(playerHand: Hand, dealerHand: Hand): 'player' | 
   return 'push'
 }
 
-export function calculatePayout(bet: number, playerHand: Hand, dealerHand: Hand): number {
+export function calculatePayout(bet: number, playerHand: Hand, dealerHand: Hand, rules?: RuleSet): number {
   const winner = determineWinner(playerHand, dealerHand)
   
   if (winner === 'dealer') return 0
   if (winner === 'push') return bet
   
-  // Player wins - check for blackjack (3:2 payout) vs regular win (1:1)
+  // Player wins - check for blackjack vs regular win
   if (playerHand.isBlackjack && !dealerHand.isBlackjack) {
-    return bet + Math.floor(bet * 1.5) // 3:2 payout for blackjack
+    if (rules) {
+      return bet + getBlackjackPayout(bet, rules)
+    }
+    // Fallback to original logic (3:2 payout)
+    return bet + Math.floor(bet * 1.5)
   }
   
   return bet + bet // 1:1 payout for regular wins (return original bet + winnings)

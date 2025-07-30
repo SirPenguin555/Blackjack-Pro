@@ -1,9 +1,11 @@
 import { create } from 'zustand'
-import { GameState, Player, GameAction, ChipDenomination, GameMode, GameStats } from '@/types/game'
+import { GameState, Player, GameAction, ChipDenomination, GameMode, GameStats, TableLevel } from '@/types/game'
 import { TutorialState, TUTORIAL_STEPS } from '@/types/tutorial'
 import { StrategyAdvice, getBasicStrategyAdvice } from '@/lib/strategy'
 import { createDeck, shuffleDeck, dealCard } from '@/lib/deck'
 import { createHand, addCardToHand, shouldDealerHit, calculatePayout, canDouble, canSplit, determineWinner } from '@/lib/blackjack'
+import { createRuleSet, GameVariant, RuleSet } from '@/lib/ruleVariations'
+import { statsTracker } from '@/lib/StatsTracker'
 
 export const CHIP_DENOMINATIONS: ChipDenomination[] = [
   { value: 1, color: 'bg-white border-gray-400 text-black', label: '$1' },
@@ -18,9 +20,14 @@ interface GameStore extends GameState {
   stats: GameStats
   tutorial: TutorialState
   currentStrategyAdvice: StrategyAdvice | null
+  currentTableLevel: TableLevel
+  currentGameVariant: GameVariant
   
   // Actions
   setGameMode: (mode: GameMode) => void
+  setRules: (rules: RuleSet) => void
+  setTableLevel: (level: TableLevel) => void
+  setGameVariant: (variant: GameVariant) => void
   initializeGame: () => void
   placeBet: (playerId: string, amount: number) => void
   dealInitialCards: () => void
@@ -58,7 +65,8 @@ const createInitialPlayer = (name: string, position: number): Player => ({
   hasSplit: false,
   position,
   lastHandWinnings: undefined,
-  isPlayingMainHand: undefined
+  isPlayingMainHand: undefined,
+  splitCount: 0
 })
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -69,6 +77,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentPlayerIndex: 0,
   phase: 'betting',
   round: 1,
+  rules: createRuleSet(GameVariant.VEGAS), // Default to Vegas rules
   gameMode: 'menu',
   stats: {
     handsPlayed: 0,
@@ -87,6 +96,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     steps: TUTORIAL_STEPS
   },
   currentStrategyAdvice: null,
+  currentTableLevel: TableLevel.BEGINNER,
+  currentGameVariant: GameVariant.VEGAS,
 
   // Actions
   setGameMode: (mode: GameMode) => {
@@ -108,7 +119,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           hasSplit: false,
           splitHand: undefined,
           lastHandWinnings: undefined,
-          isPlayingMainHand: undefined
+          isPlayingMainHand: undefined,
+          splitCount: 0
         }))
       })
     }
@@ -130,8 +142,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
       get().initializeGame()
     }
   },
+  setRules: (rules: RuleSet) => {
+    set({ rules })
+  },
+  setTableLevel: (level: TableLevel) => {
+    set({ currentTableLevel: level })
+  },
+  setGameVariant: (variant: GameVariant) => {
+    const rules = createRuleSet(variant)
+    set({ 
+      currentGameVariant: variant,
+      rules 
+    })
+  },
   initializeGame: () => {
+    const state = get()
     const newDeck = shuffleDeck(createDeck())
+    
+    // Start a new session for advanced tracking
+    statsTracker.startSession(state.currentTableLevel, state.currentGameVariant)
+    
     set({
       deck: newDeck,
       dealer: createHand(),
@@ -170,6 +200,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const updatedPlayers = [...state.players]
     let dealerHand = createHand()
 
+    // Track round start
+    statsTracker.recordRoundStart()
+
     // Deal first card to each player
     for (let i = 0; i < updatedPlayers.length; i++) {
       const { card, remainingDeck } = dealCard(currentDeck)
@@ -190,7 +223,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       
       // Update player action capabilities
       updatedPlayers[i].canDouble = canDouble(updatedPlayers[i].hand)
-      updatedPlayers[i].canSplit = canSplit(updatedPlayers[i].hand)
+      updatedPlayers[i].canSplit = canSplit(updatedPlayers[i].hand, state.rules, updatedPlayers[i].splitCount || 0)
     }
 
     // Deal second card to dealer (face up)
@@ -216,6 +249,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (playerIndex === -1) return
 
     const player = updatedPlayers[playerIndex]
+
+    // Track strategy decisions if we have advice available
+    if (state.currentStrategyAdvice && state.dealer.cards[1]) {
+      const currentHand = player.hasSplit && !player.isPlayingMainHand && player.splitHand 
+        ? player.splitHand 
+        : player.hand
+      
+      const optimalAction = state.currentStrategyAdvice.action
+      const isOptimal = action === optimalAction
+      const dealerUpCard = state.dealer.cards[1]
+      const dealerUpValue = dealerUpCard.rank === 'A' ? 11 : 
+                          ['J', 'Q', 'K'].includes(dealerUpCard.rank) ? 10 : 
+                          parseInt(dealerUpCard.rank)
+
+      statsTracker.recordStrategyDecision(
+        action,
+        optimalAction,
+        isOptimal,
+        currentHand.value,
+        dealerUpValue
+      )
+    }
 
     switch (action) {
       case 'hit': {
@@ -349,7 +404,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       let currentDealerHand = currentState.dealer
       let currentDeck = [...currentState.deck]
 
-      if (shouldDealerHit(currentDealerHand)) {
+      if (shouldDealerHit(currentDealerHand, currentState.rules)) {
         const { card, remainingDeck } = dealCard(currentDeck)
         currentDeck = remainingDeck
         currentDealerHand = addCardToHand(currentDealerHand, card)
@@ -386,14 +441,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       let totalWinnings = 0
       
       // Calculate payout for main hand
-      const mainPayout = calculatePayout(player.bet, player.hand, state.dealer)
+      const mainPayout = calculatePayout(player.bet, player.hand, state.dealer, state.rules)
       const mainWinner = determineWinner(player.hand, state.dealer)
       const mainWinnings = mainPayout - player.bet
       
       totalPayout += mainPayout
       totalWinnings += mainWinnings
       
-      // Update statistics for main hand
+      // Update basic statistics for main hand
       updatedStats.handsPlayed++
       updatedStats.totalWinnings += mainWinnings
       
@@ -407,17 +462,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
       } else {
         updatedStats.handsPushed++
       }
+
+      // Track advanced statistics for main hand
+      const mainResult = mainWinner === 'player' ? 'win' : 
+                        mainWinner === 'dealer' ? 'loss' : 'push'
+      statsTracker.recordHandResult(
+        mainResult, 
+        mainWinnings, 
+        player.hand.isBlackjack,
+        state.currentTableLevel,
+        state.currentGameVariant
+      )
       
       // Calculate payout for split hand if exists
       if (player.hasSplit && player.splitHand) {
-        const splitPayout = calculatePayout(player.bet, player.splitHand, state.dealer)
+        const splitPayout = calculatePayout(player.bet, player.splitHand, state.dealer, state.rules)
         const splitWinner = determineWinner(player.splitHand, state.dealer)
         const splitWinnings = splitPayout - player.bet
         
         totalPayout += splitPayout
         totalWinnings += splitWinnings
         
-        // Update statistics for split hand
+        // Update basic statistics for split hand
         updatedStats.handsPlayed++
         updatedStats.totalWinnings += splitWinnings
         
@@ -431,6 +497,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } else {
           updatedStats.handsPushed++
         }
+
+        // Track advanced statistics for split hand
+        const splitResult = splitWinner === 'player' ? 'win' : 
+                           splitWinner === 'dealer' ? 'loss' : 'push'
+        statsTracker.recordHandResult(
+          splitResult, 
+          splitWinnings, 
+          player.splitHand.isBlackjack,
+          state.currentTableLevel,
+          state.currentGameVariant
+        )
       }
       
       return {
@@ -498,6 +575,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   resetStats: () => {
+    // Reset both basic stats and advanced tracking
+    statsTracker.resetAllStats()
+    
     set({
       stats: {
         handsPlayed: 0,
@@ -629,6 +709,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   takeLoan: () => {
     const state = get()
+    const loanAmount = 100
+    
     const updatedStats = {
       ...state.stats,
       loansTaken: state.stats.loansTaken + 1
@@ -636,8 +718,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     const updatedPlayers = state.players.map(player => ({
       ...player,
-      chips: player.chips + 100 // Add $100 loan
+      chips: player.chips + loanAmount
     }))
+    
+    // Track loan in advanced statistics
+    statsTracker.recordLoanTaken(loanAmount)
     
     set({
       stats: updatedStats,

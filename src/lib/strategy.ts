@@ -1,7 +1,8 @@
 import { Hand, Card } from '@/types/game'
+import { RuleSet, canPlayerSplit, canPlayerDoubleAfterSplit, canPlayerSurrender } from './ruleVariations'
 
 export interface StrategyAdvice {
-  action: 'hit' | 'stand' | 'double' | 'split'
+  action: 'hit' | 'stand' | 'double' | 'split' | 'surrender'
   reason: string
   confidence: 'high' | 'medium' | 'low'
 }
@@ -11,26 +12,50 @@ export function getBasicStrategyAdvice(
   playerHand: Hand,
   dealerUpCard: Card,
   canDouble: boolean,
-  canSplit: boolean
+  canSplit: boolean,
+  rules?: RuleSet,
+  currentSplits: number = 0,
+  isAfterSplit: boolean = false
 ): StrategyAdvice {
   const playerValue = playerHand.value
   const dealerValue = getCardValue(dealerUpCard.rank)
-  const isPair = canSplit && playerHand.cards.length === 2 && 
-                 getCardValue(playerHand.cards[0].rank) === getCardValue(playerHand.cards[1].rank)
   const isSoft = playerHand.isSoft
+
+  // Check for surrender first (only on first two cards)
+  if (rules && canPlayerSurrender(rules) && playerHand.cards.length === 2 && !isAfterSplit) {
+    const surrenderAdvice = checkSurrender(playerValue, dealerValue, isSoft)
+    if (surrenderAdvice) {
+      return surrenderAdvice
+    }
+  }
+
+  // Validate split using rules if provided
+  let canActuallySplit = canSplit
+  if (rules && playerHand.cards.length === 2) {
+    canActuallySplit = canPlayerSplit(playerHand, rules, currentSplits)
+  }
+
+  const isPair = canActuallySplit && playerHand.cards.length === 2 && 
+                 getCardValue(playerHand.cards[0].rank) === getCardValue(playerHand.cards[1].rank)
 
   // Handle pairs first
   if (isPair) {
-    return handlePairs(playerHand.cards[0].rank, dealerValue)
+    return handlePairs(playerHand.cards[0].rank, dealerValue, rules, currentSplits)
+  }
+
+  // Adjust double down availability after split
+  let canActuallyDouble = canDouble
+  if (rules && isAfterSplit) {
+    canActuallyDouble = canDouble && canPlayerDoubleAfterSplit(rules)
   }
 
   // Handle soft hands (hands with an Ace counted as 11)
   if (isSoft) {
-    return handleSoftHands(playerValue, dealerValue, canDouble)
+    return handleSoftHands(playerValue, dealerValue, canActuallyDouble)
   }
 
   // Handle hard hands
-  return handleHardHands(playerValue, dealerValue, canDouble)
+  return handleHardHands(playerValue, dealerValue, canActuallyDouble)
 }
 
 function getCardValue(rank: string): number {
@@ -43,11 +68,44 @@ function getCardValue(rank: string): number {
   }
 }
 
-function handlePairs(rank: string, dealerValue: number): StrategyAdvice {
+function checkSurrender(playerValue: number, dealerValue: number, isSoft: boolean): StrategyAdvice | null {
+  // Basic surrender strategy - only on hard totals
+  if (isSoft) return null
+
+  // Hard 16 vs dealer 9, 10, A
+  if (playerValue === 16 && (dealerValue >= 9 || dealerValue === 11)) {
+    return {
+      action: 'surrender',
+      reason: 'Surrender hard 16 against dealer\'s strong cards',
+      confidence: 'high'
+    }
+  }
+
+  // Hard 15 vs dealer 10
+  if (playerValue === 15 && dealerValue === 10) {
+    return {
+      action: 'surrender',
+      reason: 'Surrender hard 15 against dealer 10',
+      confidence: 'high'
+    }
+  }
+
+  return null
+}
+
+function handlePairs(rank: string, dealerValue: number, rules?: RuleSet, currentSplits: number = 0): StrategyAdvice {
   const pairValue = getCardValue(rank)
 
   switch (rank) {
     case 'A':
+      // Check resplit aces rule
+      if (rules && currentSplits > 0 && !rules.resplitAces) {
+        return {
+          action: 'hit',
+          reason: 'Cannot resplit Aces under current rules',
+          confidence: 'high'
+        }
+      }
       return {
         action: 'split',
         reason: 'Always split Aces - each Ace can become 21',
