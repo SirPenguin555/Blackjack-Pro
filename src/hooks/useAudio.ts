@@ -26,6 +26,9 @@ export function useAudio() {
       enableFadeTransitions: true,
       fadeDuration: 1000
     })
+    
+    // Start muted by default
+    audioManager.setMuted(true)
 
     audioManagerRef.current = audioManager
 
@@ -71,33 +74,11 @@ export function useAudio() {
     }
   }, [])
 
-  const startBackgroundMusic = async () => {
-    if (!audioManagerRef.current || !currentTrack) {
-      return
-    }
-
-    try {
-      await audioManagerRef.current.play()
-    } catch (error) {
-      console.error('Failed to start background music:', error)
-    }
-  }
-
-  const stopBackgroundMusic = () => {
-    if (!audioManagerRef.current) {
-      return
-    }
-
-    audioManagerRef.current.pause()
-  }
-
   return {
     audioManager: audioManagerRef.current,
     isInitialized,
     currentTrack,
     error,
-    startBackgroundMusic,
-    stopBackgroundMusic,
     availableTracks: CASINO_TRACKS
   }
 }

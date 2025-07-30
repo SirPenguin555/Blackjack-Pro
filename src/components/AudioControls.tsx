@@ -51,52 +51,26 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
     audioManager?.toggleMute()
   }
 
-  const handlePlayToggle = async () => {
-    if (!audioManager) return
-    
-    try {
-      await audioManager.togglePlayback()
-    } catch (error) {
-      console.error('Failed to toggle playback:', error)
-    }
-  }
+  // Music is always playing, so we don't need play/pause functionality
 
   if (!audioManager) {
     return null
   }
 
-  const isPlaying = audioState === 'playing'
-  const canPlay = audioState === 'idle' || audioState === 'paused' || audioState === 'playing'
-
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      {/* Play/Pause Button */}
-      <button
-        onClick={handlePlayToggle}
-        disabled={!canPlay || isLoading}
-        className="flex items-center justify-center w-8 h-8 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-full transition-colors duration-200"
-        title={isPlaying ? 'Pause music' : 'Play music'}
-      >
-        {isLoading ? (
-          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        ) : isPlaying ? (
-          // Pause icon
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-          </svg>
-        ) : (
-          // Play icon
-          <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        )}
-      </button>
+      {/* Music Label */}
+      <span className="text-xs text-gray-300 hidden sm:inline">
+        🎵 Music
+      </span>
 
-      {/* Mute Button */}
+      {/* Mute/Unmute Button */}
       <button
         onClick={handleMuteToggle}
-        className="flex items-center justify-center w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded-full transition-colors duration-200"
-        title={isMuted ? 'Unmute' : 'Mute'}
+        className={`flex items-center justify-center w-8 h-8 ${
+          isMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+        } text-white rounded-full transition-colors duration-200`}
+        title={isMuted ? 'Unmute music' : 'Mute music'}
       >
         {isMuted ? (
           // Muted icon
@@ -111,25 +85,27 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
         )}
       </button>
 
-      {/* Volume Slider */}
-      <div className="flex items-center space-x-2">
-        <span className="text-xs text-gray-300 w-6">
-          {isMuted ? '🔇' : volume === 0 ? '🔈' : volume < 50 ? '🔉' : '🔊'}
-        </span>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={isMuted ? 0 : volume}
-          onChange={handleVolumeChange}
-          disabled={isLoading}
-          className="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed slider"
-          title={`Volume: ${volume}%`}
-        />
-        <span className="text-xs text-gray-300 w-8 text-right">
-          {volume}%
-        </span>
-      </div>
+      {/* Volume Slider - only show when unmuted */}
+      {!isMuted && (
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-300 w-6">
+            {volume === 0 ? '🔈' : volume < 50 ? '🔉' : '🔊'}
+          </span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={handleVolumeChange}
+            disabled={isLoading}
+            className="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed slider"
+            title={`Volume: ${volume}%`}
+          />
+          <span className="text-xs text-gray-300 w-8 text-right">
+            {volume}%
+          </span>
+        </div>
+      )}
 
       {/* Audio State Indicator */}
       {audioState === 'error' && (

@@ -48,13 +48,17 @@ export function BlackjackGame() {
   const mainPlayer = players[0] // For single player, we'll focus on the first player
   
   // Audio system
-  const { audioManager, startBackgroundMusic } = useAudio()
+  const { audioManager } = useAudio()
   
-  // Auto-start background music on first user interaction
+  // Auto-start background music on first user interaction (muted by default)
   useEffect(() => {
-    const handleFirstInteraction = () => {
+    const handleFirstInteraction = async () => {
       if (audioManager && (gameMode === 'normal' || gameMode === 'tutorial' || gameMode === 'easy')) {
-        startBackgroundMusic()
+        try {
+          await audioManager.play()
+        } catch (error) {
+          console.warn('Could not auto-start audio:', error)
+        }
         // Remove the event listener after first interaction
         document.removeEventListener('click', handleFirstInteraction)
         document.removeEventListener('keydown', handleFirstInteraction)
@@ -68,7 +72,7 @@ export function BlackjackGame() {
       document.removeEventListener('click', handleFirstInteraction)
       document.removeEventListener('keydown', handleFirstInteraction)
     }
-  }, [audioManager, gameMode, startBackgroundMusic])
+  }, [audioManager, gameMode])
   
   // State for menu warning
   const [showMenuWarning, setShowMenuWarning] = useState(false)
