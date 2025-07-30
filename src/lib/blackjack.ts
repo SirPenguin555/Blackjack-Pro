@@ -68,7 +68,8 @@ export function canSplit(hand: Hand): boolean {
   if (hand.cards.length !== 2) return false
   
   const [card1, card2] = hand.cards
-  return getCardValue(card1.rank) === getCardValue(card2.rank)
+  // Only allow splitting if ranks are identical (not just values)
+  return card1.rank === card2.rank
 }
 
 export function canDouble(hand: Hand): boolean {

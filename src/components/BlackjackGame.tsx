@@ -103,9 +103,20 @@ export function BlackjackGame() {
 
   const handleBetChange = (amount: number) => {
     if (mainPlayer && phase === 'betting') {
+      const oldBet = mainPlayer.bet
       placeBet(mainPlayer.id, amount)
-      // Play chip placement sound
-      soundService.playChipPlace()
+      
+      // Play appropriate chip sound based on action
+      if (amount > oldBet) {
+        // Adding chips - play chip stack sound
+        soundService.playChipStack()
+      } else if (amount < oldBet) {
+        // Removing chips - play chip collect sound
+        soundService.playChipCollect()
+      } else if (amount > 0) {
+        // Same amount or initial bet - play chip place sound
+        soundService.playChipPlace()
+      }
     }
   }
 

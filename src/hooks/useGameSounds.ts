@@ -33,7 +33,8 @@ export function useGameSounds() {
       case 'dealing':
         // Play card dealing sound when dealing initial cards
         if (prevPhase === 'betting') {
-          soundService.playCardDeal()
+          // Use a short delay to ensure the sound plays at the right time
+          setTimeout(() => soundService.playCardDeal(), 100)
         }
         break
         
@@ -62,16 +63,18 @@ export function useGameSounds() {
               if (winner === 'player') {
                 if (mainPlayer.hand.isBlackjack) {
                   await soundService.playBlackjack()
+                  // Play chip collection sound after blackjack sound
+                  setTimeout(() => soundService.playChipCollect(), 600)
                 } else {
                   await soundService.playWin()
+                  // Play chip collection sound after win sound
+                  setTimeout(() => soundService.playChipCollect(), 600)
                 }
-                // Play chip collection sound after win sound
-                setTimeout(() => soundService.playChipCollect(), 500)
               } else if (winner === 'dealer') {
                 await soundService.playLose()
               } else {
-                // Push/tie
-                await soundService.playPush()
+                // Push/tie - play a neutral sound (using the 'draw' sound file)
+                await soundService.playDraw()
               }
             }
           }
@@ -85,20 +88,37 @@ export function useGameSounds() {
 
   // Monitor hand size changes to detect hits
   const previousHandSize = useRef<number>(0)
+  const previousDealerHandSize = useRef<number>(0)
   
   useEffect(() => {
     if (!mainPlayer || !mainPlayer.hand) return
     
     const currentHandSize = mainPlayer.hand.cards.length
     
-    // Play card deal sound when hand size increases during playing phase
+    // Play card flip sound when hand size increases during playing phase
     // (but not during initial dealing)
     if (phase === 'playing' && 
         currentHandSize > previousHandSize.current && 
         previousHandSize.current >= 2) {
-      soundService.playCardDeal()
+      soundService.playCardFlip()
     }
     
     previousHandSize.current = currentHandSize
   }, [mainPlayer?.hand.cards.length, phase, soundService])
+
+  // Monitor dealer hand size changes to detect dealer hits
+  useEffect(() => {
+    if (!dealer) return
+    
+    const currentDealerHandSize = dealer.cards.length
+    
+    // Play card flip sound when dealer hits (during dealer phase)
+    if (phase === 'dealer' && 
+        currentDealerHandSize > previousDealerHandSize.current && 
+        previousDealerHandSize.current >= 2) {
+      soundService.playCardFlip()
+    }
+    
+    previousDealerHandSize.current = currentDealerHandSize
+  }, [dealer?.cards.length, phase, soundService])
 }

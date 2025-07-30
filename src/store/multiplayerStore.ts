@@ -156,6 +156,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
   initialize: async () => {
     try {
+      set({ connectionStatus: 'connecting' })
+      
       // Dynamically import Firebase and services
       const { auth } = await import('@/lib/firebase/config')
       const { MultiplayerService } = await import('@/lib/firebase/multiplayer')
@@ -183,10 +185,12 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         }
       })
 
-      // Subscribe to available tables
-      service.subscribeToAvailableTables((tables) => {
-        set({ availableTables: tables })
-      })
+      // Subscribe to available tables (if service supports it)
+      if (service.subscribeToAvailableTables) {
+        service.subscribeToAvailableTables((tables) => {
+          set({ availableTables: tables })
+        })
+      }
     } catch (error) {
       console.error('Failed to initialize multiplayer:', error)
       set({ connectionStatus: 'error' })

@@ -16,6 +16,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
     createTable,
     joinTable,
     setPlayerName,
+    setConnectionStatus,
     initialize
   } = useMultiplayerStore()
 

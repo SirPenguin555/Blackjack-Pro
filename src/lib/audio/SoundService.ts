@@ -74,6 +74,10 @@ export class SoundService {
     await this.playSafe('push')
   }
 
+  async playDraw(): Promise<void> {
+    await this.playSafe('draw')
+  }
+
   async playBust(): Promise<void> {
     await this.playSafe('bust')
   }
