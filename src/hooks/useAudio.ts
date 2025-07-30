@@ -8,9 +8,12 @@ const CASINO_TRACKS: AudioTrack[] = [
   {
     id: 'casino-ambient-1',
     name: 'Casino Ambiance',
-    url: '/audio/casino-ambient.mp3' // We'll add this audio file later
+    url: '/audio/casino-ambient.mp3'
   }
-  // We can add more tracks here in the future
+  // Future tracks could include:
+  // - casino-tense.mp3 (for high-stakes moments)
+  // - casino-victory.mp3 (for big wins)
+  // - casino-chill.mp3 (for casual gameplay)
 ]
 
 const SOUND_EFFECTS: SoundEffect[] = [
@@ -70,6 +73,12 @@ const SOUND_EFFECTS: SoundEffect[] = [
   {
     id: 'push',
     name: 'Push',
+    category: 'outcome',
+    url: '/audio/draw.mp3'
+  },
+  {
+    id: 'draw',
+    name: 'Draw',
     category: 'outcome',
     url: '/audio/draw.mp3'
   },

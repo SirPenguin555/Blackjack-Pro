@@ -17,9 +17,12 @@ import { HelpScreen } from './HelpScreen'
 import { SplitHand } from './SplitHand'
 import { AudioControls } from './AudioControls'
 import { MultiplayerLobby } from './MultiplayerLobby'
+import { MultiplayerGame } from './MultiplayerGame'
 import { useAudio } from '@/hooks/useAudio'
 import { useGameSounds } from '@/hooks/useGameSounds'
+import { useDynamicMusic } from '@/hooks/useDynamicMusic'
 import { getSoundService } from '@/lib/audio/SoundService'
+import { useMultiplayerStore } from '@/store/multiplayerStore'
 
 export function BlackjackGame() {
   const {
@@ -51,10 +54,14 @@ export function BlackjackGame() {
   const currentPlayer = players[currentPlayerIndex]
   const mainPlayer = players[0] // For single player, we'll focus on the first player
   
+  // Multiplayer state
+  const { currentTable, currentGame } = useMultiplayerStore()
+  
   // Audio system
   const { audioManager } = useAudio()
   const soundService = getSoundService()
   useGameSounds() // Hook that monitors game state and plays outcome sounds
+  useDynamicMusic(audioManager) // Hook that adjusts music based on game state
   
   // Initialize sound service with audio manager
   useEffect(() => {
@@ -233,6 +240,16 @@ export function BlackjackGame() {
 
   // Show multiplayer lobby if in multiplayer mode
   if (gameMode === 'multiplayer') {
+    // If we're in an active multiplayer game, show the game
+    if (currentTable && currentGame) {
+      return (
+        <MultiplayerGame
+          onBack={() => setGameMode('menu')}
+        />
+      )
+    }
+    
+    // Otherwise show the lobby
     return (
       <MultiplayerLobby
         onBack={() => setGameMode('menu')}

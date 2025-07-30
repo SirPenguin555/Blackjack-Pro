@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
@@ -218,7 +219,8 @@ export class MultiplayerService {
     const user = auth.currentUser
     if (!user) throw new Error('User must be authenticated')
 
-    const initialGameState: Omit<MultiplayerGameState, 'tableId'> = {
+    const initialGameState: MultiplayerGameState = {
+      tableId,
       deck: [], // Will be populated by game logic
       players: [],
       dealer: { cards: [], value: 0, isSoft: false, isBlackjack: false, isBusted: false },
@@ -230,14 +232,13 @@ export class MultiplayerService {
       messages: [],
       lastAction: null,
       lastActionPlayerId: null,
-      lastActionTimestamp: 0
+      lastActionTimestamp: 0,
+      playerConnections: {}
     }
 
     const gameRef = doc(db, 'games', tableId)
-    await updateDoc(gameRef, {
-      ...initialGameState,
-      tableId
-    })
+    // Use setDoc instead of updateDoc for initial creation
+    await setDoc(gameRef, initialGameState)
   }
 
   /**

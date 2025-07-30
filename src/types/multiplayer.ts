@@ -39,6 +39,7 @@ export interface MultiplayerGameState extends Omit<GameState, 'players'> {
   lastAction: GameAction | null
   lastActionPlayerId: string | null
   lastActionTimestamp: number
+  playerConnections: Record<string, boolean> // Track active connections
 }
 
 export interface ChatMessage {

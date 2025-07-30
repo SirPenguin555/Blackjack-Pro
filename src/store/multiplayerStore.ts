@@ -65,6 +65,19 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       // Initialize the game for this table
       await service.initializeGame(tableId, settings)
       
+      // Subscribe to table and game updates
+      const tableUnsubscribe = service.subscribeToTable(tableId, (table) => {
+        set({ currentTable: table })
+      })
+      
+      const gameUnsubscribe = service.subscribeToGame(tableId, (game) => {
+        set({ currentGame: game })
+      })
+      
+      // Store unsubscribe functions for cleanup
+      service.tableUnsubscribe = tableUnsubscribe
+      service.gameUnsubscribe = gameUnsubscribe
+      
       set({ 
         connectionStatus: 'connected',
         isHost: true 
@@ -89,6 +102,19 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       set({ connectionStatus: 'connecting' })
       await service.joinTable(tableId, playerName, password)
       
+      // Subscribe to table and game updates
+      const tableUnsubscribe = service.subscribeToTable(tableId, (table) => {
+        set({ currentTable: table })
+      })
+      
+      const gameUnsubscribe = service.subscribeToGame(tableId, (game) => {
+        set({ currentGame: game })
+      })
+      
+      // Store unsubscribe functions for cleanup
+      service.tableUnsubscribe = tableUnsubscribe
+      service.gameUnsubscribe = gameUnsubscribe
+      
       set({ 
         connectionStatus: 'connected',
         playerName,
@@ -108,6 +134,16 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     
     try {
       await service.leaveTable(currentTable.id)
+      
+      // Clean up subscriptions
+      if (service.tableUnsubscribe) {
+        service.tableUnsubscribe()
+        service.tableUnsubscribe = null
+      }
+      if (service.gameUnsubscribe) {
+        service.gameUnsubscribe()
+        service.gameUnsubscribe = null
+      }
       
       set({
         currentTable: null,
