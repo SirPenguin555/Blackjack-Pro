@@ -8,6 +8,24 @@ To enable background music, add the following audio file:
 
 - `casino-ambient.mp3` - Main casino background music track
 
+To enable sound effects, add the following audio files:
+
+### Card Sounds
+- `card-deal.mp3` - Card dealing sound
+- `card-flip.mp3` - Card flip/reveal sound
+
+### Chip Sounds  
+- `chip-place.mp3` - Placing bet sound
+- `chip-stack.mp3` - Chip stacking sound
+- `chip-collect.mp3` - Collecting winnings sound
+
+### Outcome Sounds
+- `win.mp3` - Regular win sound
+- `lose.mp3` - Loss sound  
+- `blackjack.mp3` - Blackjack win sound
+- `push.mp3` - Push/tie sound
+- `bust.mp3` - Player bust sound
+
 ## Audio File Requirements
 
 - **Format**: MP3 (recommended for best browser compatibility)

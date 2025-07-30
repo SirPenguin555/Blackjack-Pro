@@ -1,5 +1,6 @@
 import { 
   AudioTrack, 
+  SoundEffect,
   AudioPreferences, 
   AudioManagerConfig, 
   AudioState, 
@@ -9,10 +10,17 @@ import {
 export class AudioManager {
   private audioContext: AudioContext | null = null
   private gainNode: GainNode | null = null
+  private soundEffectsGainNode: GainNode | null = null
   private currentSource: AudioBufferSourceNode | null = null
   private currentTrack: AudioTrack | null = null
+  private soundEffects: Map<string, SoundEffect> = new Map()
   private state: AudioState = 'idle'
-  private preferences: AudioPreferences = { volume: 50, isMuted: false }
+  private preferences: AudioPreferences = { 
+    volume: 50, 
+    isMuted: false,
+    soundEffectsVolume: 50,
+    soundEffectsMuted: true // Default muted
+  }
   private config: AudioManagerConfig
   private eventListeners: Map<keyof AudioManagerEvents, Function[]> = new Map()
   private startTime = 0
@@ -27,6 +35,7 @@ export class AudioManager {
     }
     
     this.preferences.volume = config.defaultVolume || 50
+    this.preferences.soundEffectsVolume = config.defaultVolume || 50
     this.loadPreferences()
   }
 
@@ -43,10 +52,13 @@ export class AudioManager {
 
       this.audioContext = new AudioContextClass()
       this.gainNode = this.audioContext.createGain()
+      this.soundEffectsGainNode = this.audioContext.createGain()
       this.gainNode.connect(this.audioContext.destination)
+      this.soundEffectsGainNode.connect(this.audioContext.destination)
       
-      // Set initial volume
+      // Set initial volumes
       this.updateGainNodeVolume()
+      this.updateSoundEffectsGainNodeVolume()
       
       this.emit('stateChange', this.state)
     } catch (error) {
@@ -222,6 +234,110 @@ export class AudioManager {
   }
 
   /**
+   * Load a sound effect
+   */
+  async loadSoundEffect(soundEffect: SoundEffect): Promise<void> {
+    if (!this.audioContext) {
+      await this.initialize()
+    }
+
+    try {
+      const response = await fetch(soundEffect.url)
+      if (!response.ok) {
+        throw new Error(`Failed to load sound effect: ${response.statusText}`)
+      }
+
+      const arrayBuffer = await response.arrayBuffer()
+      const audioBuffer = await this.audioContext!.decodeAudioData(arrayBuffer)
+      
+      soundEffect.buffer = audioBuffer
+      this.soundEffects.set(soundEffect.id, soundEffect)
+    } catch (error) {
+      this.emit('error', error as Error)
+      throw error
+    }
+  }
+
+  /**
+   * Play a sound effect
+   */
+  async playSoundEffect(soundEffectId: string): Promise<void> {
+    if (!this.audioContext || !this.soundEffectsGainNode) {
+      await this.initialize()
+    }
+
+    const soundEffect = this.soundEffects.get(soundEffectId)
+    if (!soundEffect || !soundEffect.buffer) {
+      throw new Error(`Sound effect not found: ${soundEffectId}`)
+    }
+
+    // Resume audio context if suspended (required for mobile)
+    if (this.audioContext!.state === 'suspended') {
+      await this.audioContext!.resume()
+    }
+
+    // Create new buffer source for this sound effect
+    const source = this.audioContext!.createBufferSource()
+    source.buffer = soundEffect.buffer
+    source.connect(this.soundEffectsGainNode!)
+    
+    // Play the sound effect (one-shot)
+    source.start(0)
+  }
+
+  /**
+   * Get a loaded sound effect
+   */
+  getSoundEffect(soundEffectId: string): SoundEffect | null {
+    return this.soundEffects.get(soundEffectId) || null
+  }
+
+  /**
+   * Set sound effects volume (0-100)
+   */
+  setSoundEffectsVolume(volume: number): void {
+    const clampedVolume = Math.max(0, Math.min(100, volume))
+    this.preferences.soundEffectsVolume = clampedVolume
+    this.updateSoundEffectsGainNodeVolume()
+    this.savePreferences()
+    this.emit('soundEffectsVolumeChange', clampedVolume)
+  }
+
+  /**
+   * Get current sound effects volume (0-100)
+   */
+  getSoundEffectsVolume(): number {
+    return this.preferences.soundEffectsVolume
+  }
+
+  /**
+   * Toggle sound effects mute
+   */
+  toggleSoundEffectsMute(): void {
+    this.preferences.soundEffectsMuted = !this.preferences.soundEffectsMuted
+    this.updateSoundEffectsGainNodeVolume()
+    this.savePreferences()
+    this.emit('soundEffectsMuteChange', this.preferences.soundEffectsMuted)
+  }
+
+  /**
+   * Set sound effects mute state
+   */
+  setSoundEffectsMuted(muted: boolean): void {
+    this.preferences.soundEffectsMuted = muted
+    this.updateSoundEffectsGainNodeVolume()
+    this.savePreferences()
+    this.emit('soundEffectsMuteChange', muted)
+  }
+
+  /**
+   * Check if sound effects are muted
+   */
+  isSoundEffectsMuted(): boolean {
+    return this.preferences.soundEffectsMuted
+  }
+
+  /**
    * Clean up resources
    */
   dispose(): void {
@@ -232,10 +348,18 @@ export class AudioManager {
       this.gainNode = null
     }
     
+    if (this.soundEffectsGainNode) {
+      this.soundEffectsGainNode.disconnect()
+      this.soundEffectsGainNode = null
+    }
+    
     if (this.audioContext) {
       this.audioContext.close()
       this.audioContext = null
     }
+    
+    // Clear sound effects
+    this.soundEffects.clear()
     
     this.eventListeners.clear()
   }
@@ -299,6 +423,27 @@ export class AudioManager {
     }
   }
 
+  private updateSoundEffectsGainNodeVolume(): void {
+    if (this.soundEffectsGainNode) {
+      const volume = this.preferences.soundEffectsMuted ? 0 : this.preferences.soundEffectsVolume / 100
+      
+      if (this.config.enableFadeTransitions && this.audioContext) {
+        // Smooth volume transition
+        this.soundEffectsGainNode.gain.cancelScheduledValues(this.audioContext.currentTime)
+        this.soundEffectsGainNode.gain.setValueAtTime(
+          this.soundEffectsGainNode.gain.value, 
+          this.audioContext.currentTime
+        )
+        this.soundEffectsGainNode.gain.linearRampToValueAtTime(
+          volume, 
+          this.audioContext.currentTime + (this.config.fadeDuration! / 1000)
+        )
+      } else {
+        this.soundEffectsGainNode.gain.value = volume
+      }
+    }
+  }
+
   private emit<K extends keyof AudioManagerEvents>(
     event: K, 
     ...args: Parameters<AudioManagerEvents[K]>
@@ -322,7 +467,9 @@ export class AudioManager {
         const preferences = JSON.parse(saved)
         this.preferences = {
           volume: Math.max(0, Math.min(100, preferences.volume || 50)),
-          isMuted: Boolean(preferences.isMuted)
+          isMuted: Boolean(preferences.isMuted),
+          soundEffectsVolume: Math.max(0, Math.min(100, preferences.soundEffectsVolume || this.config.defaultVolume || 50)),
+          soundEffectsMuted: preferences.soundEffectsMuted !== undefined ? Boolean(preferences.soundEffectsMuted) : true // Default muted
         }
       }
     } catch (error) {

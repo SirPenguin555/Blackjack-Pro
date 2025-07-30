@@ -6,9 +6,21 @@ export interface AudioTrack {
   duration?: number
 }
 
+export type SoundEffectCategory = 'card' | 'chip' | 'outcome'
+
+export interface SoundEffect {
+  id: string
+  name: string
+  category: SoundEffectCategory
+  url: string
+  buffer?: AudioBuffer
+}
+
 export interface AudioPreferences {
-  volume: number // 0-100
-  isMuted: boolean
+  volume: number // 0-100 (music volume)
+  isMuted: boolean // music mute state
+  soundEffectsVolume: number // 0-100 (sound effects volume)
+  soundEffectsMuted: boolean // sound effects mute state
 }
 
 export interface AudioManagerConfig {
@@ -23,6 +35,8 @@ export interface AudioManagerEvents {
   'stateChange': (state: AudioState) => void
   'volumeChange': (volume: number) => void
   'muteChange': (isMuted: boolean) => void
+  'soundEffectsVolumeChange': (volume: number) => void
+  'soundEffectsMuteChange': (isMuted: boolean) => void
   'trackEnd': () => void
   'error': (error: Error) => void
 }

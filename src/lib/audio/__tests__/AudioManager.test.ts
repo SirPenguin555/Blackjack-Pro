@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { AudioManager } from '../AudioManager'
-import { AudioTrack } from '../types'
+import { AudioTrack, SoundEffect } from '../types'
 
 describe('AudioManager', () => {
   let audioManager: AudioManager
@@ -291,7 +291,11 @@ describe('AudioManager', () => {
       
       expect(localStorage.setItem).toHaveBeenCalledWith(
         'blackjack-audio-preferences',
-        JSON.stringify({ volume: 85, isMuted: true })
+        expect.stringContaining('"volume":85')
+      )
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'blackjack-audio-preferences',
+        expect.stringContaining('"isMuted":true')
       )
     })
 
@@ -347,6 +351,219 @@ describe('AudioManager', () => {
       audioManager.setVolume(80) // This shouldn't trigger the callback
       
       expect(callback).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Sound Effects', () => {
+    let mockSoundEffect: SoundEffect
+
+    beforeEach(() => {
+      mockSoundEffect = {
+        id: 'card-deal',
+        name: 'Card Deal Sound',
+        category: 'card',
+        url: '/audio/card-deal.mp3'
+      }
+    })
+
+    describe('Sound Effects Loading', () => {
+      it('should load sound effect successfully', async () => {
+        const arrayBuffer = new ArrayBuffer(512)
+        
+        ;(global.fetch as any).mockResolvedValue({
+          ok: true,
+          arrayBuffer: () => Promise.resolve(arrayBuffer)
+        })
+
+        await audioManager.loadSoundEffect(mockSoundEffect)
+
+        expect(global.fetch).toHaveBeenCalledWith(mockSoundEffect.url)
+        expect(audioManager.getSoundEffect(mockSoundEffect.id)).toBeTruthy()
+      })
+
+      it('should handle failed sound effect loading', async () => {
+        ;(global.fetch as any).mockResolvedValue({
+          ok: false,
+          statusText: 'Not Found'
+        })
+
+        await expect(audioManager.loadSoundEffect(mockSoundEffect))
+          .rejects.toThrow('Failed to load sound effect: Not Found')
+      })
+
+      it('should load multiple sound effects', async () => {
+        const mockSoundEffect2: SoundEffect = {
+          id: 'chip-stack',
+          name: 'Chip Stack Sound',
+          category: 'chip',
+          url: '/audio/chip-stack.mp3'
+        }
+
+        const arrayBuffer = new ArrayBuffer(512)
+        ;(global.fetch as any).mockResolvedValue({
+          ok: true,
+          arrayBuffer: () => Promise.resolve(arrayBuffer)
+        })
+
+        await audioManager.loadSoundEffect(mockSoundEffect)
+        await audioManager.loadSoundEffect(mockSoundEffect2)
+
+        expect(audioManager.getSoundEffect('card-deal')).toBeTruthy()
+        expect(audioManager.getSoundEffect('chip-stack')).toBeTruthy()
+      })
+    })
+
+    describe('Sound Effects Playback', () => {
+      beforeEach(async () => {
+        const arrayBuffer = new ArrayBuffer(512)
+        ;(global.fetch as any).mockResolvedValue({
+          ok: true,
+          arrayBuffer: () => Promise.resolve(arrayBuffer)
+        })
+        await audioManager.loadSoundEffect(mockSoundEffect)
+      })
+
+      it('should play sound effect', async () => {
+        await audioManager.playSoundEffect('card-deal')
+        // Since we're using mocks, we just verify no errors are thrown
+        expect(true).toBe(true)
+      })
+
+      it('should play multiple sound effects concurrently', async () => {
+        const mockSoundEffect2: SoundEffect = {
+          id: 'chip-place',
+          name: 'Chip Place Sound',
+          category: 'chip',
+          url: '/audio/chip-place.mp3'
+        }
+
+        const arrayBuffer = new ArrayBuffer(512)
+        ;(global.fetch as any).mockResolvedValue({
+          ok: true,
+          arrayBuffer: () => Promise.resolve(arrayBuffer)
+        })
+        await audioManager.loadSoundEffect(mockSoundEffect2)
+
+        // Should be able to play multiple sounds without conflicts
+        await audioManager.playSoundEffect('card-deal')
+        await audioManager.playSoundEffect('chip-place')
+        
+        expect(true).toBe(true)
+      })
+
+      it('should handle playing non-existent sound effect', async () => {
+        await expect(audioManager.playSoundEffect('non-existent'))
+          .rejects.toThrow('Sound effect not found: non-existent')
+      })
+    })
+
+    describe('Sound Effects Volume Control', () => {
+      it('should set sound effects volume independently', () => {
+        audioManager.setSoundEffectsVolume(60)
+        expect(audioManager.getSoundEffectsVolume()).toBe(60)
+        expect(audioManager.getVolume()).toBe(75) // Music volume unchanged
+      })
+
+      it('should clamp sound effects volume to valid range', () => {
+        audioManager.setSoundEffectsVolume(-10)
+        expect(audioManager.getSoundEffectsVolume()).toBe(0)
+        
+        audioManager.setSoundEffectsVolume(150)
+        expect(audioManager.getSoundEffectsVolume()).toBe(100)
+      })
+
+      it('should toggle sound effects mute independently', () => {
+        expect(audioManager.isSoundEffectsMuted()).toBe(true) // Default muted
+        
+        audioManager.toggleSoundEffectsMute()
+        expect(audioManager.isSoundEffectsMuted()).toBe(false)
+        
+        audioManager.toggleSoundEffectsMute()
+        expect(audioManager.isSoundEffectsMuted()).toBe(true)
+      })
+
+      it('should set sound effects mute state directly', () => {
+        audioManager.setSoundEffectsMuted(false)
+        expect(audioManager.isSoundEffectsMuted()).toBe(false)
+        
+        audioManager.setSoundEffectsMuted(true)
+        expect(audioManager.isSoundEffectsMuted()).toBe(true)
+      })
+    })
+
+    describe('Sound Effects Events', () => {
+      it('should emit sound effects volume change events', () => {
+        const volumeCallback = vi.fn()
+        audioManager.on('soundEffectsVolumeChange', volumeCallback)
+        
+        audioManager.setSoundEffectsVolume(80)
+        expect(volumeCallback).toHaveBeenCalledWith(80)
+      })
+
+      it('should emit sound effects mute change events', () => {
+        const muteCallback = vi.fn()
+        audioManager.on('soundEffectsMuteChange', muteCallback)
+        
+        audioManager.toggleSoundEffectsMute()
+        expect(muteCallback).toHaveBeenCalledWith(false)
+      })
+    })
+
+    describe('Sound Effects Preferences', () => {
+      it('should save sound effects preferences separately from music', () => {
+        audioManager.setSoundEffectsVolume(65)
+        audioManager.setSoundEffectsMuted(false)
+        
+        expect(localStorage.setItem).toHaveBeenCalledWith(
+          'blackjack-audio-preferences',
+          expect.stringContaining('"soundEffectsVolume":65')
+        )
+        expect(localStorage.setItem).toHaveBeenCalledWith(
+          'blackjack-audio-preferences',
+          expect.stringContaining('"soundEffectsMuted":false')
+        )
+      })
+
+      it('should load sound effects preferences from localStorage', () => {
+        ;(localStorage.getItem as any).mockReturnValue(
+          JSON.stringify({ 
+            volume: 70, 
+            isMuted: false,
+            soundEffectsVolume: 85,
+            soundEffectsMuted: false
+          })
+        )
+        
+        const newAudioManager = new AudioManager()
+        expect(newAudioManager.getSoundEffectsVolume()).toBe(85)
+        expect(newAudioManager.isSoundEffectsMuted()).toBe(false)
+      })
+
+      it('should handle missing sound effects preferences gracefully', () => {
+        ;(localStorage.getItem as any).mockReturnValue(
+          JSON.stringify({ volume: 70, isMuted: false })
+        )
+        
+        const newAudioManager = new AudioManager({ defaultVolume: 50 })
+        expect(newAudioManager.getSoundEffectsVolume()).toBe(50) // Falls back to default
+        expect(newAudioManager.isSoundEffectsMuted()).toBe(true) // Default muted
+      })
+    })
+
+    describe('Sound Effects Cleanup', () => {
+      it('should dispose sound effects resources properly', async () => {
+        const arrayBuffer = new ArrayBuffer(512)
+        ;(global.fetch as any).mockResolvedValue({
+          ok: true,
+          arrayBuffer: () => Promise.resolve(arrayBuffer)
+        })
+        
+        await audioManager.loadSoundEffect(mockSoundEffect)
+        expect(audioManager.getSoundEffect('card-deal')).toBeTruthy()
+        
+        audioManager.dispose()
+        expect(audioManager.getSoundEffect('card-deal')).toBeNull()
+      })
     })
   })
 })
