@@ -21,6 +21,7 @@ export interface AudioPreferences {
   isMuted: boolean // music mute state
   soundEffectsVolume: number // 0-100 (sound effects volume)
   soundEffectsMuted: boolean // sound effects mute state
+  dynamicMusicEnabled: boolean // dynamic music system enabled/disabled
 }
 
 export interface AudioManagerConfig {
@@ -37,6 +38,8 @@ export interface AudioManagerEvents {
   'muteChange': (isMuted: boolean) => void
   'soundEffectsVolumeChange': (volume: number) => void
   'soundEffectsMuteChange': (isMuted: boolean) => void
+  'dynamicMusicChange': (enabled: boolean) => void
+  'trackChange': (track: AudioTrack) => void
   'trackEnd': () => void
   'error': (error: Error) => void
 }

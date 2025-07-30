@@ -102,7 +102,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
 
         {/* Footer */}
         <div className="mt-8 text-green-300 text-sm">
-          Version Beta 2.0 • Phase 2 Complete
+          Version Beta 3.0 • Singleplayer Fully Stable
         </div>
       </div>
     </div>

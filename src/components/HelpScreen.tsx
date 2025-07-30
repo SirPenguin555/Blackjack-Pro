@@ -132,7 +132,7 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
           {/* Game Modes */}
           <section>
             <h2 className="text-2xl font-bold text-yellow-400 mb-4">🎮 Game Modes</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-white">
               <div className="bg-green-600 bg-opacity-60 p-4 rounded-lg">
                 <h3 className="font-bold text-white mb-2">Classic Mode</h3>
                 <p>Standard blackjack gameplay with authentic casino rules.</p>
@@ -147,19 +147,155 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
                 <h3 className="font-bold text-black mb-2">Easy Mode</h3>
                 <p>Strategy hints and suggestions to help you learn optimal play.</p>
               </div>
+              
+              <div className="bg-purple-600 bg-opacity-60 p-4 rounded-lg">
+                <h3 className="font-bold text-white mb-2">Multiplayer Mode</h3>
+                <p>Play with up to 3 other players in real-time with chat and avatars.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Multiplayer Guide */}
+          <section>
+            <h2 className="text-2xl font-bold text-yellow-400 mb-4">👥 Multiplayer Guide</h2>
+            
+            <div className="space-y-6">
+              {/* How to Join */}
+              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-purple-400 mb-3">🚪 Joining a Game</h3>
+                <div className="text-white space-y-2">
+                  <p>• Select "Multiplayer" from the main menu</p>
+                  <p>• Choose "Join Table" to find available games</p>
+                  <p>• Or select "Create Table" to host your own game</p>
+                  <p>• Tables support 2-4 players total</p>
+                </div>
+              </div>
+
+              {/* Game Flow */}
+              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-blue-400 mb-3">🔄 Multiplayer Game Flow</h3>
+                <div className="text-white space-y-2">
+                  <p><strong>1. Betting Phase:</strong> All players place their bets simultaneously</p>
+                  <p><strong>2. Dealing:</strong> Cards are dealt to all players and the dealer</p>
+                  <p><strong>3. Player Turns:</strong> Each player takes their turn in order</p>
+                  <p><strong>4. Dealer Turn:</strong> Dealer plays according to standard rules</p>
+                  <p><strong>5. Results:</strong> Winnings are calculated for all players</p>
+                </div>
+              </div>
+
+              {/* Social Features */}
+              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-green-400 mb-3">💬 Social Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+                  <div>
+                    <h4 className="font-bold mb-2">Chat System:</h4>
+                    <ul className="ml-4 space-y-1">
+                      <li>• Real-time messaging with other players</li>
+                      <li>• Quick reaction emojis</li>
+                      <li>• Respectful communication expected</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-bold mb-2">Player Avatars:</h4>
+                    <ul className="ml-4 space-y-1">
+                      <li>• Unique visual representation</li>
+                      <li>• Shows player status and actions</li>
+                      <li>• Displays chip count and bet amount</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Multiplayer Strategy */}
+              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-yellow-400 mb-3">🧠 Multiplayer Strategy</h3>
+                <div className="text-white space-y-3">
+                  <div>
+                    <h4 className="font-bold text-orange-400 mb-2">Key Differences from Single Player:</h4>
+                    <ul className="ml-4 space-y-1">
+                      <li>• Your decisions don't affect other players' outcomes</li>
+                      <li>• Each player plays independently against the dealer</li>
+                      <li>• Other players' cards are visible for information</li>
+                      <li>• Time limits prevent long delays</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-bold text-cyan-400 mb-2">Multiplayer Etiquette:</h4>
+                    <ul className="ml-4 space-y-1">
+                      <li>• Make decisions promptly to keep the game flowing</li>
+                      <li>• Be respectful in chat communications</li>
+                      <li>• Don't give unsolicited advice unless asked</li>
+                      <li>• Congratulate winners and support those learning</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-bold text-pink-400 mb-2">Advanced Tips:</h4>
+                    <ul className="ml-4 space-y-1">
+                      <li>• Observe other players' strategies to learn</li>
+                      <li>• Card counting becomes more complex with multiple players</li>
+                      <li>• Focus on your own optimal play, not others' decisions</li>
+                      <li>• Use the social aspect to make the game more enjoyable</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connection & Technical */}
+              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                <h3 className="text-xl font-bold text-red-400 mb-3">🔧 Connection & Technical</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+                  <div>
+                    <h4 className="font-bold mb-2">Connection Issues:</h4>
+                    <ul className="ml-4 space-y-1">
+                      <li>• Game includes automatic reconnection</li>
+                      <li>• Your seat is reserved for 60 seconds</li>
+                      <li>• Progress is saved during disconnections</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-bold mb-2">Turn Timeouts:</h4>
+                    <ul className="ml-4 space-y-1">
+                      <li>• 30 seconds to make betting decisions</li>
+                      <li>• 15 seconds for hit/stand/double/split</li>
+                      <li>• Auto-stand if time expires</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
           {/* Tips for Success */}
           <section>
             <h2 className="text-2xl font-bold text-yellow-400 mb-4">🏆 Tips for Success</h2>
-            <div className="text-white space-y-2">
-              <p>• Start with Easy Mode to learn basic strategy</p>
-              <p>• Pay attention to the dealer's up card when making decisions</p>
-              <p>• Manage your bankroll - don't bet more than you can afford to lose</p>
-              <p>• Remember that blackjack is a game of probability, not luck</p>
-              <p>• Practice with the tutorial to understand all the rules</p>
-              <p>• Use the statistics screen to track your improvement over time</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-bold text-green-400 mb-3">Single Player Tips:</h3>
+                <div className="text-white space-y-2">
+                  <p>• Start with Easy Mode to learn basic strategy</p>
+                  <p>• Pay attention to the dealer's up card when making decisions</p>
+                  <p>• Manage your bankroll - don't bet more than you can afford to lose</p>
+                  <p>• Remember that blackjack is a game of probability, not luck</p>
+                  <p>• Practice with the tutorial to understand all the rules</p>
+                  <p>• Use the statistics screen to track your improvement over time</p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-bold text-purple-400 mb-3">Multiplayer Tips:</h3>
+                <div className="text-white space-y-2">
+                  <p>• Practice in single player before joining multiplayer tables</p>
+                  <p>• Be patient and respectful with newer players</p>
+                  <p>• Don't let others' play affect your optimal strategy</p>
+                  <p>• Use chat to enhance the social experience</p>
+                  <p>• Learn by observing experienced players</p>
+                  <p>• Keep the game moving - make decisions promptly</p>
+                </div>
+              </div>
             </div>
           </section>
 

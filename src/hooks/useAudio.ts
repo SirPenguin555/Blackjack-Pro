@@ -6,14 +6,25 @@ import { AudioTrack, SoundEffect } from '@/lib/audio/types'
 
 const CASINO_TRACKS: AudioTrack[] = [
   {
-    id: 'casino-ambient-1',
+    id: 'casino-ambient',
     name: 'Casino Ambiance',
     url: '/audio/casino-ambient.mp3'
+  },
+  {
+    id: 'casino-tense',
+    name: 'Casino Tense',
+    url: '/audio/casino-tense.mp3'
+  },
+  {
+    id: 'casino-victory',
+    name: 'Casino Victory',
+    url: '/audio/casino-victory.mp3'
+  },
+  {
+    id: 'casino-chill',
+    name: 'Casino Chill',
+    url: '/audio/casino-chill.mp3'
   }
-  // Future tracks could include:
-  // - casino-tense.mp3 (for high-stakes moments)
-  // - casino-victory.mp3 (for big wins)
-  // - casino-chill.mp3 (for casual gameplay)
 ]
 
 const SOUND_EFFECTS: SoundEffect[] = [
@@ -106,6 +117,7 @@ export function useAudio() {
     
     // Start muted by default
     audioManager.setMuted(true)
+    audioManager.setSoundEffectsMuted(true)
 
     audioManagerRef.current = audioManager
 
@@ -122,16 +134,25 @@ export function useAudio() {
       try {
         await audioManager.initialize()
         
-        // Try to load the first track
-        if (CASINO_TRACKS.length > 0) {
+        // Try to load all tracks
+        let loadedCount = 0
+        for (const track of CASINO_TRACKS) {
           try {
-            await audioManager.loadTrack(CASINO_TRACKS[0])
-            setCurrentTrack(CASINO_TRACKS[0])
+            await audioManager.loadTrack(track)
+            loadedCount++
+            
+            // Set the first successfully loaded track as current
+            if (loadedCount === 1) {
+              setCurrentTrack(track)
+            }
           } catch (loadError) {
-            // If we can't load the track, that's okay - just log it
-            console.warn('Could not load audio track:', loadError)
-            setError('Audio track not available')
+            // Silently ignore track loading errors - some tracks may not exist
+            console.warn(`Could not load audio track ${track.id}:`, loadError)
           }
+        }
+        
+        if (loadedCount === 0) {
+          setError('No audio tracks available')
         }
         
         // Load sound effects (silently fail if not available)

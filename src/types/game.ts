@@ -59,3 +59,11 @@ export interface GameStats {
   totalWinnings: number
   loansTaken: number
 }
+
+// Re-export table system types for convenience
+export { 
+  TableLevel, 
+  TableConfiguration, 
+  TableRequirements, 
+  TableTheme 
+} from '../lib/tableSystem'

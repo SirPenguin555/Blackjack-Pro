@@ -14,6 +14,7 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
   const [isMuted, setIsMuted] = useState(false)
   const [soundEffectsVolume, setSoundEffectsVolume] = useState(50)
   const [isSoundEffectsMuted, setIsSoundEffectsMuted] = useState(true)
+  const [isDynamicMusicEnabled, setIsDynamicMusicEnabled] = useState(true)
   const [audioState, setAudioState] = useState<AudioState>('idle')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -25,6 +26,7 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
     setIsMuted(audioManager.isMuted())
     setSoundEffectsVolume(audioManager.getSoundEffectsVolume())
     setIsSoundEffectsMuted(audioManager.isSoundEffectsMuted())
+    setIsDynamicMusicEnabled(audioManager.isDynamicMusicEnabled())
     setAudioState(audioManager.getState())
 
     // Set up event listeners
@@ -32,6 +34,7 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
     const handleMuteChange = (muted: boolean) => setIsMuted(muted)
     const handleSoundEffectsVolumeChange = (newVolume: number) => setSoundEffectsVolume(newVolume)
     const handleSoundEffectsMuteChange = (muted: boolean) => setIsSoundEffectsMuted(muted)
+    const handleDynamicMusicChange = (enabled: boolean) => setIsDynamicMusicEnabled(enabled)
     const handleStateChange = (state: AudioState) => {
       setAudioState(state)
       setIsLoading(state === 'loading')
@@ -41,6 +44,7 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
     audioManager.on('muteChange', handleMuteChange)
     audioManager.on('soundEffectsVolumeChange', handleSoundEffectsVolumeChange)
     audioManager.on('soundEffectsMuteChange', handleSoundEffectsMuteChange)
+    audioManager.on('dynamicMusicChange', handleDynamicMusicChange)
     audioManager.on('stateChange', handleStateChange)
 
     return () => {
@@ -48,6 +52,7 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
       audioManager.off('muteChange', handleMuteChange)
       audioManager.off('soundEffectsVolumeChange', handleSoundEffectsVolumeChange)
       audioManager.off('soundEffectsMuteChange', handleSoundEffectsMuteChange)
+      audioManager.off('dynamicMusicChange', handleDynamicMusicChange)
       audioManager.off('stateChange', handleStateChange)
     }
   }, [audioManager])
@@ -68,6 +73,10 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
 
   const handleSoundEffectsMuteToggle = () => {
     audioManager?.toggleSoundEffectsMute()
+  }
+
+  const handleDynamicMusicToggle = () => {
+    audioManager?.setDynamicMusicEnabled(!isDynamicMusicEnabled)
   }
 
   // Music is always playing, so we don't need play/pause functionality
@@ -151,6 +160,33 @@ export function AudioControls({ audioManager, className = '' }: AudioControlsPro
             title={`Sound effects volume: ${soundEffectsVolume}%`}
           />
         )}
+      </div>
+
+      {/* Separator */}
+      <div className="w-px h-4 bg-gray-600"></div>
+
+      {/* Dynamic Music Toggle */}
+      <div className="flex items-center space-x-1">
+        <span className="text-xs text-gray-300 hidden sm:inline">
+          🎼
+        </span>
+        <button
+          onClick={handleDynamicMusicToggle}
+          className={`flex items-center justify-center w-6 h-6 ${
+            isDynamicMusicEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'
+          } text-white rounded-full transition-colors duration-200`}
+          title={isDynamicMusicEnabled ? 'Disable dynamic music' : 'Enable dynamic music'}
+        >
+          {isDynamicMusicEnabled ? (
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          ) : (
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6zm-2 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" opacity="0.5"/>
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* Audio State Indicator */}

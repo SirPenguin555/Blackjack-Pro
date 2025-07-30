@@ -39,6 +39,22 @@ To enable sound effects, add the following audio files:
 For better browser compatibility, you can also provide:
 - `casino-ambient.ogg` - OGG Vorbis format (fallback for Firefox)
 
+## Dynamic Music System
+
+The game features a dynamic music system that adjusts volume based on game state and tension levels. The system currently uses:
+
+- `casino-ambient.mp3` - Main casino background music (required)
+
+### Enhanced Dynamic Music (Optional)
+
+For a more immersive experience, you can add these additional tracks:
+
+- `casino-tense.mp3` - For high-stakes moments and close hands
+- `casino-victory.mp3` - For big wins and blackjack celebrations  
+- `casino-chill.mp3` - For casual gameplay and low-stress moments
+
+These tracks would be automatically selected based on game context and player hand values.
+
 ## Adding New Tracks
 
 To add more background music tracks:

@@ -13,13 +13,15 @@ export class AudioManager {
   private soundEffectsGainNode: GainNode | null = null
   private currentSource: AudioBufferSourceNode | null = null
   private currentTrack: AudioTrack | null = null
+  private loadedTracks: Map<string, AudioTrack> = new Map()
   private soundEffects: Map<string, SoundEffect> = new Map()
   private state: AudioState = 'idle'
   private preferences: AudioPreferences = { 
     volume: 50, 
     isMuted: false,
     soundEffectsVolume: 50,
-    soundEffectsMuted: true // Default muted
+    soundEffectsMuted: true, // Default muted
+    dynamicMusicEnabled: true // Default enabled
   }
   private config: AudioManagerConfig
   private eventListeners: Map<keyof AudioManagerEvents, Function[]> = new Map()
@@ -89,7 +91,14 @@ export class AudioManager {
       
       track.buffer = audioBuffer
       track.duration = audioBuffer.duration
-      this.currentTrack = track
+      
+      // Store in loaded tracks map
+      this.loadedTracks.set(track.id, track)
+      
+      // Set as current track if no track is currently loaded
+      if (!this.currentTrack) {
+        this.currentTrack = track
+      }
       
       this.setState('idle')
     } catch (error) {
@@ -338,6 +347,55 @@ export class AudioManager {
   }
 
   /**
+   * Switch to a different track
+   */
+  async switchTrack(trackId: string): Promise<void> {
+    const track = this.loadedTracks.get(trackId)
+    if (!track || !track.buffer) {
+      throw new Error(`Track not found or not loaded: ${trackId}`)
+    }
+
+    const wasPlaying = this.state === 'playing'
+    this.currentTrack = track
+    
+    if (wasPlaying) {
+      await this.play()
+    }
+    
+    this.emit('trackChange', track)
+  }
+
+  /**
+   * Get a loaded track by ID
+   */
+  getLoadedTrack(trackId: string): AudioTrack | null {
+    return this.loadedTracks.get(trackId) || null
+  }
+
+  /**
+   * Get all loaded tracks
+   */
+  getLoadedTracks(): AudioTrack[] {
+    return Array.from(this.loadedTracks.values())
+  }
+
+  /**
+   * Set dynamic music enabled/disabled
+   */
+  setDynamicMusicEnabled(enabled: boolean): void {
+    this.preferences.dynamicMusicEnabled = enabled
+    this.savePreferences()
+    this.emit('dynamicMusicChange', enabled)
+  }
+
+  /**
+   * Check if dynamic music is enabled
+   */
+  isDynamicMusicEnabled(): boolean {
+    return this.preferences.dynamicMusicEnabled
+  }
+
+  /**
    * Clean up resources
    */
   dispose(): void {
@@ -358,8 +416,9 @@ export class AudioManager {
       this.audioContext = null
     }
     
-    // Clear sound effects
+    // Clear sound effects and loaded tracks
     this.soundEffects.clear()
+    this.loadedTracks.clear()
     
     this.eventListeners.clear()
   }
@@ -469,7 +528,8 @@ export class AudioManager {
           volume: Math.max(0, Math.min(100, preferences.volume || 50)),
           isMuted: Boolean(preferences.isMuted),
           soundEffectsVolume: Math.max(0, Math.min(100, preferences.soundEffectsVolume || this.config.defaultVolume || 50)),
-          soundEffectsMuted: preferences.soundEffectsMuted !== undefined ? Boolean(preferences.soundEffectsMuted) : true // Default muted
+          soundEffectsMuted: preferences.soundEffectsMuted !== undefined ? Boolean(preferences.soundEffectsMuted) : true, // Default muted
+          dynamicMusicEnabled: preferences.dynamicMusicEnabled !== undefined ? Boolean(preferences.dynamicMusicEnabled) : true // Default enabled
         }
       }
     } catch (error) {
