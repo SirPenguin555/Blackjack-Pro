@@ -83,6 +83,9 @@ export class MultiplayerService {
       canDouble: false,
       canSplit: false,
       hasSplit: false,
+      splitHand: undefined,
+      isPlayingMainHand: true,
+      lastHandWinnings: undefined,
       position: 0, // Will be set by server
       isHost: false,
       isConnected: true,

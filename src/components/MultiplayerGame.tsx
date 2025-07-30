@@ -8,6 +8,8 @@ import { ChipSelector } from './ChipSelector'
 import { GameActions } from './GameActions'
 import { CHIP_DENOMINATIONS } from '@/store/gameStore'
 import { Avatar } from './Avatar'
+import { usePlayerTimeout } from '@/hooks/usePlayerTimeout'
+import { useConnectionRecovery } from '@/hooks/useConnectionRecovery'
 
 interface MultiplayerGameProps {
   onBack: () => void
@@ -20,11 +22,18 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
     userId,
     playerName,
     leaveTable,
-    sendChatMessage
+    sendChatMessage,
+    placeBet,
+    playerAction,
+    startNewRound
   } = useMultiplayerStore()
 
   const [chatMessage, setChatMessage] = useState('')
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+
+  // Connection and timeout management
+  const { remainingTime, isMyTurn } = usePlayerTimeout()
+  const { isConnected } = useConnectionRecovery()
 
   // Update chat messages when game updates
   useEffect(() => {
@@ -76,8 +85,12 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
             <div className="text-yellow-400 font-semibold text-sm sm:text-base">
               {currentTable.name} | Round {currentGame.round}
             </div>
-            <div className="text-white text-sm">
-              {currentGame.players.length}/{currentTable.maxPlayers} Players
+            <div className="flex items-center space-x-4 text-white text-sm">
+              <span>{currentGame.players.length}/{currentTable.maxPlayers} Players</span>
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                <span>{isConnected ? 'Online' : 'Offline'}</span>
+              </div>
             </div>
           </div>
           
@@ -171,8 +184,10 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
                       denominations={CHIP_DENOMINATIONS}
                       selectedBet={currentPlayer.bet}
                       onBetChange={(amount) => {
-                        // TODO: Implement multiplayer betting
-                        console.log('Bet:', amount)
+                        placeBet(amount).catch(error => {
+                          console.error('Failed to place bet:', error)
+                          // Could show toast notification here
+                        })
                       }}
                       maxBet={currentPlayer.chips}
                     />
@@ -189,12 +204,19 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
                   <div className="space-y-4">
                     <div className="text-center text-white">
                       <div className="text-lg font-semibold">Your Turn</div>
+                      {remainingTime > 0 && (
+                        <div className="text-sm text-yellow-400">
+                          Time remaining: {Math.ceil(remainingTime)}s
+                        </div>
+                      )}
                     </div>
                     <GameActions
                       player={currentPlayer}
                       onAction={(action) => {
-                        // TODO: Implement multiplayer actions
-                        console.log('Action:', action)
+                        playerAction(action).catch(error => {
+                          console.error('Failed to perform action:', error)
+                          // Could show toast notification here
+                        })
                       }}
                     />
                   </div>
@@ -220,8 +242,9 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
                     <button
                       className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
                       onClick={() => {
-                        // TODO: Implement new round
-                        console.log('New round')
+                        startNewRound().catch(error => {
+                          console.error('Failed to start new round:', error)
+                        })
                       }}
                     >
                       Next Round

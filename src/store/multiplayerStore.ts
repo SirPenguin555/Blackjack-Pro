@@ -7,6 +7,10 @@ import {
   ConnectionStatus,
   ChatMessage
 } from '@/types/multiplayer'
+import { GameAction } from '@/types/game'
+import { MultiplayerGameEngine } from '@/lib/multiplayerGameEngine'
+import { doc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
 
 interface MultiplayerStore extends MultiplayerState {
   // Service instance
@@ -22,6 +26,11 @@ interface MultiplayerStore extends MultiplayerState {
   setCurrentGame: (game: MultiplayerGameState | null) => void
   setAvailableTables: (tables: GameTable[]) => void
   setPlayerName: (name: string) => void
+  
+  // Game actions
+  placeBet: (amount: number) => Promise<void>
+  playerAction: (action: GameAction) => Promise<void>
+  startNewRound: () => Promise<void>
   
   // Initialize multiplayer system
   initialize: () => void
@@ -188,6 +197,85 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
   setPlayerName: (name: string) => {
     set({ playerName: name })
+  },
+
+  placeBet: async (amount: number) => {
+    const { service, currentTable, currentGame, userId } = get()
+    
+    if (!currentTable || !currentGame || !service) {
+      throw new Error('No active table or game')
+    }
+    
+    try {
+      // Process bet through game engine
+      const updatedGameState = MultiplayerGameEngine.processBet(currentGame, userId, amount)
+      
+      // Update Firestore
+      const gameRef = doc(db, 'games', currentTable.id)
+      await updateDoc(gameRef, updatedGameState)
+      
+      // Check if all players have bet and start dealing
+      const playersWithBets = updatedGameState.players.filter(p => p.bet > 0)
+      if (playersWithBets.length === updatedGameState.players.length) {
+        const dealingState = MultiplayerGameEngine.startDealing(updatedGameState)
+        await updateDoc(gameRef, dealingState)
+      }
+    } catch (error) {
+      console.error('Failed to place bet:', error)
+      throw error
+    }
+  },
+
+  playerAction: async (action: GameAction) => {
+    const { service, currentTable, currentGame, userId } = get()
+    
+    if (!currentTable || !currentGame || !service) {
+      throw new Error('No active table or game')
+    }
+    
+    try {
+      // Process action through game engine
+      let updatedGameState = MultiplayerGameEngine.processPlayerAction(currentGame, userId, action)
+      
+      // If we moved to dealer phase, process dealer logic
+      if (updatedGameState.phase === 'dealer') {
+        // Wait a moment for dramatic effect
+        setTimeout(async () => {
+          const finalState = MultiplayerGameEngine.calculateResults(updatedGameState)
+          const gameRef = doc(db, 'games', currentTable.id)
+          await updateDoc(gameRef, finalState)
+        }, 2000)
+      }
+      
+      // Update Firestore
+      const gameRef = doc(db, 'games', currentTable.id)
+      await updateDoc(gameRef, updatedGameState)
+      
+    } catch (error) {
+      console.error('Failed to process player action:', error)
+      throw error
+    }
+  },
+
+  startNewRound: async () => {
+    const { service, currentTable, currentGame } = get()
+    
+    if (!currentTable || !currentGame || !service) {
+      throw new Error('No active table or game')
+    }
+    
+    try {
+      // Initialize new round
+      const newRoundState = MultiplayerGameEngine.initializeRound(currentGame, currentTable.settings)
+      
+      // Update Firestore
+      const gameRef = doc(db, 'games', currentTable.id)
+      await updateDoc(gameRef, newRoundState)
+      
+    } catch (error) {
+      console.error('Failed to start new round:', error)
+      throw error
+    }
   },
 
   initialize: async () => {

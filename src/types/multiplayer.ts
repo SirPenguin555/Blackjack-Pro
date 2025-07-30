@@ -6,6 +6,9 @@ export interface MultiplayerPlayer extends Player {
   isConnected: boolean
   lastSeen: number // Timestamp
   avatar?: string
+  splitHand?: Hand // For split hands
+  isPlayingMainHand: boolean // Track which hand is active during split
+  lastHandWinnings?: number // Track winnings from last hand
 }
 
 export interface GameTable {
