@@ -65,26 +65,56 @@ export function addCardToHand(hand: Hand, card: Card): Hand {
   return createHand(newCards)
 }
 
-export function canSplit(hand: Hand, rules?: RuleSet, currentSplits: number = 0): boolean {
-  if (rules) {
-    return canPlayerSplit(hand, rules, currentSplits)
-  }
-  
-  // Fallback to original logic for backward compatibility
+export function canSplit(hand: Hand, rules?: RuleSet, currentSplits = 0): boolean {
   if (hand.cards.length !== 2) return false
   
   const [card1, card2] = hand.cards
   // Only allow splitting if ranks are identical (not just values)
-  return card1.rank === card2.rank
+  if (card1.rank !== card2.rank) return false
+  
+  if (!rules) {
+    return true // Default behavior
+  }
+  
+  // Check if we can resplit to the maximum number of hands
+  if (!rules.resplitToFourHands && currentSplits >= 1) {
+    return false
+  }
+  
+  if (rules.resplitToFourHands && currentSplits >= 3) {
+    return false // Maximum 4 hands total
+  }
+  
+  // Check if we can resplit Aces
+  if (card1.rank === 'A' && currentSplits > 0 && !rules.resplitAces) {
+    return false
+  }
+  
+  return true
 }
 
 export function canDouble(hand: Hand): boolean {
   return hand.cards.length === 2 && !hand.isBusted
 }
 
+
+export function canSurrender(hand: Hand, rules?: RuleSet): boolean {
+  if (!rules || !rules.surrenderAllowed) return false
+  
+  // Can only surrender on first two cards
+  return hand.cards.length === 2 && !hand.isBlackjack
+}
+
+export function canInsurance(dealerUpCard: Card, rules?: RuleSet): boolean {
+  if (!rules || !rules.insuranceAllowed) return false
+  
+  // Insurance is only available when dealer shows Ace
+  return dealerUpCard.rank === 'A'
+}
+
 export function shouldDealerHit(hand: Hand, rules?: RuleSet): boolean {
   if (rules) {
-    return getDealerAction(hand, rules) === 'hit'
+    return getDealerAction(rules, hand.value, hand.isSoft) === 'hit'
   }
   
   // Fallback to original logic for backward compatibility (Vegas rules)
@@ -117,7 +147,7 @@ export function calculatePayout(bet: number, playerHand: Hand, dealerHand: Hand,
   // Player wins - check for blackjack vs regular win
   if (playerHand.isBlackjack && !dealerHand.isBlackjack) {
     if (rules) {
-      return bet + getBlackjackPayout(bet, rules)
+      return bet + Math.floor(bet * getBlackjackPayout(rules))
     }
     // Fallback to original logic (3:2 payout)
     return bet + Math.floor(bet * 1.5)

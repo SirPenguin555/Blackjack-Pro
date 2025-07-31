@@ -1,10 +1,15 @@
+import { useState } from 'react'
 import { GameStats } from '@/types/game'
+import { RULE_CONFIGURATIONS, GameVariant } from '@/lib/ruleVariations'
+import { TABLE_CONFIGURATIONS, TableLevel } from '@/lib/tableSystem'
 
 interface HelpScreenProps {
   onBack: () => void
 }
 
 export function HelpScreen({ onBack }: HelpScreenProps) {
+  const [activeTab, setActiveTab] = useState<'basic' | 'variants' | 'tables' | 'multiplayer'>('basic')
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900 p-4">
       <div className="max-w-4xl mx-auto">
@@ -22,9 +27,56 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
           <div className="w-24"></div> {/* Spacer for centering */}
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap justify-center mb-6 bg-black bg-opacity-30 rounded-lg p-2">
+          <button
+            onClick={() => setActiveTab('basic')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'basic' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-transparent text-blue-300 hover:bg-blue-600 hover:bg-opacity-50'
+            }`}
+          >
+            📋 Basic Rules
+          </button>
+          <button
+            onClick={() => setActiveTab('variants')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'variants' 
+                ? 'bg-purple-600 text-white' 
+                : 'bg-transparent text-purple-300 hover:bg-purple-600 hover:bg-opacity-50'
+            }`}
+          >
+            🃏 Game Variants
+          </button>
+          <button
+            onClick={() => setActiveTab('tables')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'tables' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-transparent text-green-300 hover:bg-green-600 hover:bg-opacity-50'
+            }`}
+          >
+            🎯 Tables & Progression
+          </button>
+          <button
+            onClick={() => setActiveTab('multiplayer')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'multiplayer' 
+                ? 'bg-pink-600 text-white' 
+                : 'bg-transparent text-pink-300 hover:bg-pink-600 hover:bg-opacity-50'
+            }`}
+          >
+            👥 Multiplayer Guide
+          </button>
+        </div>
+
         {/* Content */}
         <div className="bg-green-700 bg-opacity-50 rounded-lg p-6 space-y-8">
           
+          {/* Basic Rules Tab */}
+          {activeTab === 'basic' && (
+            <div className="space-y-8">
           {/* Basic Rules */}
           <section>
             <h2 className="text-2xl font-bold text-yellow-400 mb-4">📋 Basic Rules</h2>
@@ -155,149 +207,304 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
             </div>
           </section>
 
-          {/* Multiplayer Guide */}
-          <section>
-            <h2 className="text-2xl font-bold text-yellow-400 mb-4">👥 Multiplayer Guide</h2>
-            
-            <div className="space-y-6">
-              {/* How to Join */}
-              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
-                <h3 className="text-xl font-bold text-purple-400 mb-3">🚪 Joining a Game</h3>
-                <div className="text-white space-y-2">
-                  <p>• Select "Multiplayer" from the main menu</p>
-                  <p>• Choose "Join Table" to find available games</p>
-                  <p>• Or select "Create Table" to host your own game</p>
-                  <p>• Tables support 2-4 players total</p>
-                </div>
-              </div>
-
-              {/* Game Flow */}
-              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
-                <h3 className="text-xl font-bold text-blue-400 mb-3">🔄 Multiplayer Game Flow</h3>
-                <div className="text-white space-y-2">
-                  <p><strong>1. Betting Phase:</strong> All players place their bets simultaneously</p>
-                  <p><strong>2. Dealing:</strong> Cards are dealt to all players and the dealer</p>
-                  <p><strong>3. Player Turns:</strong> Each player takes their turn in order</p>
-                  <p><strong>4. Dealer Turn:</strong> Dealer plays according to standard rules</p>
-                  <p><strong>5. Results:</strong> Winnings are calculated for all players</p>
-                </div>
-              </div>
-
-              {/* Social Features */}
-              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
-                <h3 className="text-xl font-bold text-green-400 mb-3">💬 Social Features</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-                  <div>
-                    <h4 className="font-bold mb-2">Chat System:</h4>
-                    <ul className="ml-4 space-y-1">
-                      <li>• Real-time messaging with other players</li>
-                      <li>• Quick reaction emojis</li>
-                      <li>• Respectful communication expected</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-bold mb-2">Player Avatars:</h4>
-                    <ul className="ml-4 space-y-1">
-                      <li>• Unique visual representation</li>
-                      <li>• Shows player status and actions</li>
-                      <li>• Displays chip count and bet amount</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Multiplayer Strategy */}
-              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
-                <h3 className="text-xl font-bold text-yellow-400 mb-3">🧠 Multiplayer Strategy</h3>
-                <div className="text-white space-y-3">
-                  <div>
-                    <h4 className="font-bold text-orange-400 mb-2">Key Differences from Single Player:</h4>
-                    <ul className="ml-4 space-y-1">
-                      <li>• Your decisions don't affect other players' outcomes</li>
-                      <li>• Each player plays independently against the dealer</li>
-                      <li>• Other players' cards are visible for information</li>
-                      <li>• Time limits prevent long delays</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-bold text-cyan-400 mb-2">Multiplayer Etiquette:</h4>
-                    <ul className="ml-4 space-y-1">
-                      <li>• Make decisions promptly to keep the game flowing</li>
-                      <li>• Be respectful in chat communications</li>
-                      <li>• Don't give unsolicited advice unless asked</li>
-                      <li>• Congratulate winners and support those learning</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-bold text-pink-400 mb-2">Advanced Tips:</h4>
-                    <ul className="ml-4 space-y-1">
-                      <li>• Observe other players' strategies to learn</li>
-                      <li>• Card counting becomes more complex with multiple players</li>
-                      <li>• Focus on your own optimal play, not others' decisions</li>
-                      <li>• Use the social aspect to make the game more enjoyable</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Connection & Technical */}
-              <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
-                <h3 className="text-xl font-bold text-red-400 mb-3">🔧 Connection & Technical</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-                  <div>
-                    <h4 className="font-bold mb-2">Connection Issues:</h4>
-                    <ul className="ml-4 space-y-1">
-                      <li>• Game includes automatic reconnection</li>
-                      <li>• Your seat is reserved for 60 seconds</li>
-                      <li>• Progress is saved during disconnections</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-bold mb-2">Turn Timeouts:</h4>
-                    <ul className="ml-4 space-y-1">
-                      <li>• 30 seconds to make betting decisions</li>
-                      <li>• 15 seconds for hit/stand/double/split</li>
-                      <li>• Auto-stand if time expires</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* Tips for Success */}
           <section>
             <h2 className="text-2xl font-bold text-yellow-400 mb-4">🏆 Tips for Success</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-bold text-green-400 mb-3">Single Player Tips:</h3>
-                <div className="text-white space-y-2">
-                  <p>• Start with Easy Mode to learn basic strategy</p>
-                  <p>• Pay attention to the dealer's up card when making decisions</p>
-                  <p>• Manage your bankroll - don't bet more than you can afford to lose</p>
-                  <p>• Remember that blackjack is a game of probability, not luck</p>
-                  <p>• Practice with the tutorial to understand all the rules</p>
-                  <p>• Use the statistics screen to track your improvement over time</p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-bold text-purple-400 mb-3">Multiplayer Tips:</h3>
-                <div className="text-white space-y-2">
-                  <p>• Practice in single player before joining multiplayer tables</p>
-                  <p>• Be patient and respectful with newer players</p>
-                  <p>• Don't let others' play affect your optimal strategy</p>
-                  <p>• Use chat to enhance the social experience</p>
-                  <p>• Learn by observing experienced players</p>
-                  <p>• Keep the game moving - make decisions promptly</p>
-                </div>
-              </div>
+            <div className="text-white space-y-2">
+              <p>• Start with Easy Mode to learn basic strategy</p>
+              <p>• Pay attention to the dealer's up card when making decisions</p>
+              <p>• Manage your bankroll - don't bet more than you can afford to lose</p>
+              <p>• Remember that blackjack is a game of probability, not luck</p>
+              <p>• Practice with the tutorial to understand all the rules</p>
+              <p>• Use the statistics screen to track your improvement over time</p>
             </div>
           </section>
+            </div>
+          )}
+
+          {/* Game Variants Tab */}
+          {activeTab === 'variants' && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-bold text-yellow-400 mb-4">🃏 Game Variants</h2>
+                <p className="text-white mb-6">
+                  Each blackjack variant has different rules that affect strategy and house edge. Choose the variant that matches your experience level and preferences.
+                </p>
+                
+                <div className="space-y-6">
+                  {Object.values(RULE_CONFIGURATIONS).map((rules) => (
+                    <div key={rules.id} className="bg-green-800 bg-opacity-60 p-6 rounded-lg">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-400 mb-2">{rules.name}</h3>
+                          <p className="text-green-200 text-sm">{rules.description}</p>
+                        </div>
+                        <div className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                          {rules.numberOfDecks} Deck{rules.numberOfDecks > 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-bold text-yellow-400 mb-2">Key Rules:</h4>
+                          <ul className="text-white space-y-1 text-sm">
+                            <li>• Dealer {rules.dealerHitsSoft17 ? 'hits' : 'stands on'} soft 17</li>
+                            <li>• {rules.noHoleCard ? 'No hole card (European style)' : 'Hole card dealt'}</li>
+                            <li>• Blackjack pays {rules.blackjackPayout === 1.5 ? '3:2' : '6:5'}</li>
+                            <li>• {rules.doubleAfterSplit ? 'Can' : 'Cannot'} double after split</li>
+                            <li>• {rules.resplitAces ? 'Can' : 'Cannot'} resplit Aces</li>
+                            <li>• {rules.surrenderAllowed ? 'Late surrender allowed' : 'No surrender'}</li>
+                            <li>• {rules.insuranceAllowed ? 'Insurance available' : 'No insurance'}</li>
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-bold text-blue-400 mb-2">Strategy Impact:</h4>
+                          <div className="text-white text-sm space-y-1">
+                            {rules.id === 'vegas' && (
+                              <div>
+                                <p>• Standard strategy applies</p>
+                                <p>• Dealer hitting soft 17 increases house edge slightly</p>
+                                <p>• Insurance and even money generally not recommended</p>
+                              </div>
+                            )}
+                            {rules.id === 'european' && (
+                              <div>
+                                <p>• More cautious doubling/splitting vs dealer A/10</p>
+                                <p>• Dealer standing on soft 17 is player-favorable</p>
+                                <p>• No early surrender vs blackjack</p>
+                              </div>
+                            )}
+                            {rules.id === 'atlantic_city' && (
+                              <div>
+                                <p>• Best variant for players overall</p>
+                                <p>• Use surrender with hard 15 vs 10, hard 16 vs 9/10/A</p>
+                                <p>• Resplitting Aces is a significant advantage</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+          
+          {/* Tables & Progression Tab */}
+          {activeTab === 'tables' && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-bold text-yellow-400 mb-4">🎯 Tables & Progression</h2>
+                <p className="text-white mb-6">
+                  Progress through different table levels as you improve your skills and build your bankroll. Each table has unique betting limits and unlock requirements.
+                </p>
+                
+                <div className="space-y-4">
+                  {Object.values(TABLE_CONFIGURATIONS).map((table, index) => (
+                    <div key={table.level} className="bg-green-800 bg-opacity-60 p-6 rounded-lg">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-green-400 mb-2">
+                            {index + 1}. {table.name}
+                          </h3>
+                          <p className="text-green-200 text-sm">{table.description}</p>
+                        </div>
+                        <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold capitalize">
+                          {table.theme}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <h4 className="font-bold text-yellow-400 mb-2">Betting Limits:</h4>
+                          <ul className="text-white space-y-1 text-sm">
+                            <li>• Min bet: ${table.minBet}</li>
+                            <li>• Max bet: ${table.maxBet}</li>
+                            <li>• Buy-in: ${table.buyInMin} - ${table.buyInMax}</li>
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-bold text-blue-400 mb-2">Unlock Requirements:</h4>
+                          <ul className="text-white space-y-1 text-sm">
+                            <li>• Bankroll: ${table.unlockRequirements.minimumChips}</li>
+                            <li>• Hands played: {table.unlockRequirements.handsPlayed}</li>
+                            <li>• Win rate: {table.unlockRequirements.winRate}%</li>
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-bold text-purple-400 mb-2">Strategy Tips:</h4>
+                          <div className="text-white text-sm space-y-1">
+                            {table.level === 'beginner' && <p>• Focus on learning basic strategy</p>}
+                            {table.level === 'amateur' && <p>• Practice bankroll management</p>}
+                            {table.level === 'intermediate' && <p>• Master advanced plays</p>}
+                            {table.level === 'advanced' && <p>• Consistent strategy execution</p>}
+                            {table.level === 'professional' && <p>• Optimize for max efficiency</p>}
+                            {table.level === 'high_roller' && <p>• Elite-level play required</p>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="bg-blue-800 bg-opacity-60 p-6 rounded-lg mt-8">
+                  <h3 className="text-xl font-bold text-blue-400 mb-4">💡 Progression Tips</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white text-sm">
+                    <div>
+                      <h4 className="font-bold mb-2">Bankroll Management:</h4>
+                      <ul className="ml-4 space-y-1">
+                        <li>• Never bet more than 5% of your bankroll on a single hand</li>
+                        <li>• Build up your bankroll gradually before moving to higher tables</li>
+                        <li>• Consider taking breaks if you're on a losing streak</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-bold mb-2">Skill Development:</h4>
+                      <ul className="ml-4 space-y-1">
+                        <li>• Focus on consistency rather than short-term results</li>
+                        <li>• Use Easy Mode to practice strategy at higher table levels</li>
+                        <li>• Track your statistics to identify areas for improvement</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+          
+          {/* Multiplayer Tab */}
+          {activeTab === 'multiplayer' && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-bold text-yellow-400 mb-4">👥 Multiplayer Guide</h2>
+                
+                <div className="space-y-6">
+                  {/* How to Join */}
+                  <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                    <h3 className="text-xl font-bold text-purple-400 mb-3">🚪 Joining a Game</h3>
+                    <div className="text-white space-y-2">
+                      <p>• Select "Multiplayer" from the main menu</p>
+                      <p>• Choose "Join Table" to find available games</p>
+                      <p>• Or select "Create Table" to host your own game</p>
+                      <p>• Tables support 2-4 players total</p>
+                    </div>
+                  </div>
+
+                  {/* Game Flow */}
+                  <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                    <h3 className="text-xl font-bold text-blue-400 mb-3">🔄 Multiplayer Game Flow</h3>
+                    <div className="text-white space-y-2">
+                      <p><strong>1. Betting Phase:</strong> All players place their bets simultaneously</p>
+                      <p><strong>2. Dealing:</strong> Cards are dealt to all players and the dealer</p>
+                      <p><strong>3. Player Turns:</strong> Each player takes their turn in order</p>
+                      <p><strong>4. Dealer Turn:</strong> Dealer plays according to standard rules</p>
+                      <p><strong>5. Results:</strong> Winnings are calculated for all players</p>
+                    </div>
+                  </div>
+
+                  {/* Social Features */}
+                  <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                    <h3 className="text-xl font-bold text-green-400 mb-3">💬 Social Features</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+                      <div>
+                        <h4 className="font-bold mb-2">Chat System:</h4>
+                        <ul className="ml-4 space-y-1">
+                          <li>• Real-time messaging with other players</li>
+                          <li>• Quick reaction emojis</li>
+                          <li>• Respectful communication expected</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-bold mb-2">Player Avatars:</h4>
+                        <ul className="ml-4 space-y-1">
+                          <li>• Unique visual representation</li>
+                          <li>• Shows player status and actions</li>
+                          <li>• Displays chip count and bet amount</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Multiplayer Strategy */}
+                  <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-3">🧠 Multiplayer Strategy</h3>
+                    <div className="text-white space-y-3">
+                      <div>
+                        <h4 className="font-bold text-orange-400 mb-2">Key Differences from Single Player:</h4>
+                        <ul className="ml-4 space-y-1">
+                          <li>• Your decisions don't affect other players' outcomes</li>
+                          <li>• Each player plays independently against the dealer</li>
+                          <li>• Other players' cards are visible for information</li>
+                          <li>• Time limits prevent long delays</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-bold text-cyan-400 mb-2">Multiplayer Etiquette:</h4>
+                        <ul className="ml-4 space-y-1">
+                          <li>• Make decisions promptly to keep the game flowing</li>
+                          <li>• Be respectful in chat communications</li>
+                          <li>• Don't give unsolicited advice unless asked</li>
+                          <li>• Congratulate winners and support those learning</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-bold text-pink-400 mb-2">Advanced Tips:</h4>
+                        <ul className="ml-4 space-y-1">
+                          <li>• Observe other players' strategies to learn</li>
+                          <li>• Card counting becomes more complex with multiple players</li>
+                          <li>• Focus on your own optimal play, not others' decisions</li>
+                          <li>• Use the social aspect to make the game more enjoyable</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connection & Technical */}
+                  <div className="bg-green-800 bg-opacity-60 p-4 rounded-lg">
+                    <h3 className="text-xl font-bold text-red-400 mb-3">🔧 Connection & Technical</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+                      <div>
+                        <h4 className="font-bold mb-2">Connection Issues:</h4>
+                        <ul className="ml-4 space-y-1">
+                          <li>• Game includes automatic reconnection</li>
+                          <li>• Your seat is reserved for 60 seconds</li>
+                          <li>• Progress is saved during disconnections</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-bold mb-2">Turn Timeouts:</h4>
+                        <ul className="ml-4 space-y-1">
+                          <li>• 30 seconds to make betting decisions</li>
+                          <li>• 15 seconds for hit/stand/double/split</li>
+                          <li>• Auto-stand if time expires</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold text-blue-400 mb-4">🏆 Multiplayer Tips for Success</h3>
+                    <div className="text-white space-y-2">
+                      <p>• Practice in single player before joining multiplayer tables</p>
+                      <p>• Be patient and respectful with newer players</p>
+                      <p>• Don't let others' play affect your optimal strategy</p>
+                      <p>• Use chat to enhance the social experience</p>
+                      <p>• Learn by observing experienced players</p>
+                      <p>• Keep the game moving - make decisions promptly</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
 
         </div>
 

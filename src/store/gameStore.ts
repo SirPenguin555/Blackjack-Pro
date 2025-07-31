@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import { GameState, Player, GameAction, ChipDenomination, GameMode, GameStats, TableLevel } from '@/types/game'
-import { TutorialState, TUTORIAL_STEPS } from '@/types/tutorial'
+import { TutorialState, TUTORIAL_STEPS, VARIANT_TUTORIAL_STEPS } from '@/types/tutorial'
 import { StrategyAdvice, getBasicStrategyAdvice } from '@/lib/strategy'
 import { createDeck, shuffleDeck, dealCard } from '@/lib/deck'
-import { createHand, addCardToHand, shouldDealerHit, calculatePayout, canDouble, canSplit, determineWinner } from '@/lib/blackjack'
+import { createHand, addCardToHand, shouldDealerHit, calculatePayout, canDouble, canSplit, canSurrender, canInsurance, determineWinner } from '@/lib/blackjack'
 import { createRuleSet, GameVariant, RuleSet } from '@/lib/ruleVariations'
 import { statsTracker } from '@/lib/StatsTracker'
+import { achievementEngine, Achievement } from '@/lib/achievementSystem'
+import { playerProfileService } from '@/lib/PlayerProfileService'
 
 export const CHIP_DENOMINATIONS: ChipDenomination[] = [
   { value: 1, color: 'bg-white border-gray-400 text-black', label: '$1' },
@@ -13,6 +15,7 @@ export const CHIP_DENOMINATIONS: ChipDenomination[] = [
   { value: 25, color: 'bg-green-500 text-white', label: '$25' },
   { value: 100, color: 'bg-black text-white', label: '$100' },
 ]
+
 
 interface GameStore extends GameState {
   // New state
@@ -22,6 +25,7 @@ interface GameStore extends GameState {
   currentStrategyAdvice: StrategyAdvice | null
   currentTableLevel: TableLevel
   currentGameVariant: GameVariant
+  newlyUnlockedAchievements: Achievement[]
   
   // Actions
   setGameMode: (mode: GameMode) => void
@@ -43,6 +47,7 @@ interface GameStore extends GameState {
   nextTutorialStep: () => void
   skipTutorial: () => void
   resetTutorial: () => void
+  startVariantTutorial: (variant: GameVariant) => void
   
   // Reset actions
   resetProgress: () => void
@@ -52,52 +57,62 @@ interface GameStore extends GameState {
   // Strategy actions
   updateStrategyAdvice: () => void
   clearStrategyAdvice: () => void
+  
+  // Achievement actions
+  checkAchievements: () => void
+  clearNewAchievements: () => void
 }
 
-const createInitialPlayer = (name: string, position: number): Player => ({
+// Load initial data from player profile
+const loadInitialProfile = () => {
+  return playerProfileService.loadProfile()
+}
+
+const createInitialPlayer = (name: string, position: number, chips?: number): Player => ({
   id: `player-${Date.now()}-${position}`,
   name,
-  chips: 250, // Starting chips
+  chips: chips ?? 250, // Use saved chips or default to 250
   hand: createHand(),
   bet: 0,
   canDouble: false,
   canSplit: false,
+  canSurrender: false,
+  canInsurance: false,
   hasSplit: false,
+  hasSurrendered: false,
+  hasInsurance: false,
+  insuranceBet: 0,
   position,
   lastHandWinnings: undefined,
   isPlayingMainHand: undefined,
   splitCount: 0
 })
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  // Initial state
-  deck: [],
-  players: [createInitialPlayer('Player 1', 0)],
-  dealer: createHand(),
-  currentPlayerIndex: 0,
-  phase: 'betting',
-  round: 1,
-  rules: createRuleSet(GameVariant.VEGAS), // Default to Vegas rules
-  gameMode: 'menu',
-  stats: {
-    handsPlayed: 0,
-    roundsPlayed: 0,
-    handsWon: 0,
-    handsLost: 0,
-    handsPushed: 0,
-    blackjacks: 0,
-    totalWinnings: 0,
-    loansTaken: 0
-  },
-  tutorial: {
-    currentStep: 0,
-    isActive: false,
-    completed: false,
-    steps: TUTORIAL_STEPS
-  },
-  currentStrategyAdvice: null,
-  currentTableLevel: TableLevel.BEGINNER,
-  currentGameVariant: GameVariant.VEGAS,
+export const useGameStore = create<GameStore>((set, get) => {
+  // Load initial profile data
+  const initialProfile = loadInitialProfile()
+  
+  return {
+    // Initial state
+    deck: [],
+    players: [createInitialPlayer('Player 1', 0, initialProfile.chips)],
+    dealer: createHand(),
+    currentPlayerIndex: 0,
+    phase: 'betting' as const,
+    round: 1,
+    rules: createRuleSet(initialProfile.currentGameVariant),
+    gameMode: 'menu' as GameMode,
+    stats: initialProfile.stats,
+    tutorial: {
+      currentStep: 0,
+      isActive: false,
+      completed: false,
+      steps: TUTORIAL_STEPS
+    },
+    currentStrategyAdvice: null,
+    currentTableLevel: initialProfile.currentTableLevel,
+    currentGameVariant: initialProfile.currentGameVariant,
+    newlyUnlockedAchievements: [],
 
   // Actions
   setGameMode: (mode: GameMode) => {
@@ -116,7 +131,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
           bet: 0,
           canDouble: false,
           canSplit: false,
+          canSurrender: false,
+          canInsurance: false,
           hasSplit: false,
+          hasSurrendered: false,
+          hasInsurance: false,
+          insuranceBet: 0,
           splitHand: undefined,
           lastHandWinnings: undefined,
           isPlayingMainHand: undefined,
@@ -147,6 +167,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   setTableLevel: (level: TableLevel) => {
     set({ currentTableLevel: level })
+    playerProfileService.updateTableLevel(level)
   },
   setGameVariant: (variant: GameVariant) => {
     const rules = createRuleSet(variant)
@@ -154,6 +175,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentGameVariant: variant,
       rules 
     })
+    playerProfileService.updateGameVariant(variant)
   },
   initializeGame: () => {
     const state = get()
@@ -210,10 +232,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       updatedPlayers[i].hand = addCardToHand(updatedPlayers[i].hand, card)
     }
 
-    // Deal first card to dealer (face down)
+    // Deal first card to dealer based on variant
     const { card: dealerCard1, remainingDeck: deck1 } = dealCard(currentDeck)
     currentDeck = deck1
-    dealerHand = addCardToHand(dealerHand, { ...dealerCard1, hidden: true })
+    if (state.rules?.noHoleCard) {
+      // European style - dealer gets first card face up
+      dealerHand = addCardToHand(dealerHand, dealerCard1)
+    } else {
+      // Vegas/Atlantic City style - dealer gets first card face down (hole card)
+      dealerHand = addCardToHand(dealerHand, { ...dealerCard1, hidden: true })
+    }
 
     // Deal second card to each player
     for (let i = 0; i < updatedPlayers.length; i++) {
@@ -224,12 +252,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Update player action capabilities
       updatedPlayers[i].canDouble = canDouble(updatedPlayers[i].hand)
       updatedPlayers[i].canSplit = canSplit(updatedPlayers[i].hand, state.rules, updatedPlayers[i].splitCount || 0)
+      updatedPlayers[i].canSurrender = canSurrender(updatedPlayers[i].hand, state.rules)
     }
 
-    // Deal second card to dealer (face up)
-    const { card: dealerCard2, remainingDeck: deck2 } = dealCard(currentDeck)
-    currentDeck = deck2
-    dealerHand = addCardToHand(dealerHand, dealerCard2)
+    // Set dealer's up card based on variant rules
+    let dealerUpCard: Card
+    if (state.rules?.noHoleCard) {
+      // European style - dealer only has one card (already face up)
+      dealerUpCard = dealerHand.cards[0]
+    } else {
+      // Vegas/Atlantic City style - dealer gets second card face up  
+      const { card: dealerCard2, remainingDeck: deck2 } = dealCard(currentDeck)
+      currentDeck = deck2
+      dealerHand = addCardToHand(dealerHand, dealerCard2)
+      dealerUpCard = dealerCard2
+    }
+
+    // Set insurance availability based on dealer's up card
+    for (let i = 0; i < updatedPlayers.length; i++) {
+      updatedPlayers[i].canInsurance = canInsurance(dealerUpCard, state.rules)
+    }
 
     set({
       deck: currentDeck,
@@ -346,6 +388,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         break
       }
+      case 'surrender': {
+        if (player.canSurrender) {
+          player.hasSurrendered = true
+          player.chips += Math.floor(player.bet / 2) // Return half the bet
+          player.canDouble = false
+          player.canSplit = false
+          player.canSurrender = false
+        }
+        break
+      }
+      case 'insurance': {
+        if (player.canInsurance && player.chips >= Math.floor(player.bet / 2)) {
+          const insuranceBet = Math.floor(player.bet / 2)
+          player.chips -= insuranceBet
+          player.insuranceBet = insuranceBet
+          player.hasInsurance = true
+          player.canInsurance = false
+        }
+        break
+      }
     }
 
     // Handle split hand logic
@@ -391,10 +453,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let currentDeck = [...state.deck]
     let dealerHand = { ...state.dealer }
 
-    // First, reveal dealer's hidden card
-    dealerHand = createHand(dealerHand.cards.map(card => ({ ...card, hidden: false })))
+    // Handle European no-hole-card variant
+    if (state.rules?.noHoleCard && dealerHand.cards.length === 1) {
+      // Deal the second card for European variant
+      const { card, remainingDeck } = dealCard(currentDeck)
+      currentDeck = remainingDeck
+      dealerHand = addCardToHand(dealerHand, card)
+    } else {
+      // First, reveal dealer's hidden card for Vegas/Atlantic City variants
+      dealerHand = createHand(dealerHand.cards.map(card => ({ ...card, hidden: false })))
+    }
     
     set({
+      deck: currentDeck,
       dealer: dealerHand
     })
 
@@ -421,7 +492,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({
           phase: 'finished'
         })
-        setTimeout(() => get().finishRound(), 1000)
+        setTimeout(() => {
+          const currentState = get()
+          // Only finish round if we're still in finished phase (not already started new round)
+          if (currentState.phase === 'finished') {
+            get().finishRound()
+          }
+        }, 1000)
       }
     }
 
@@ -440,39 +517,74 @@ export const useGameStore = create<GameStore>((set, get) => ({
       let totalPayout = 0
       let totalWinnings = 0
       
-      // Calculate payout for main hand
-      const mainPayout = calculatePayout(player.bet, player.hand, state.dealer, state.rules)
-      const mainWinner = determineWinner(player.hand, state.dealer)
-      const mainWinnings = mainPayout - player.bet
+      // Handle surrendered hands first
+      if (player.hasSurrendered) {
+        // Surrendered hands already received half bet back during surrender
+        // No additional payout needed
+        totalPayout = 0
+        totalWinnings = -Math.floor(player.bet / 2) // Lost half the bet
+      } else {
+        // Calculate payout for main hand (non-surrendered)
+        const mainPayout = calculatePayout(player.bet, player.hand, state.dealer, state.rules)
+        const mainWinner = determineWinner(player.hand, state.dealer)
+        const mainWinnings = mainPayout - player.bet
+        
+        totalPayout += mainPayout
+        totalWinnings += mainWinnings
+      }
       
-      totalPayout += mainPayout
-      totalWinnings += mainWinnings
+      // Handle insurance payouts
+      if (player.hasInsurance && player.insuranceBet > 0) {
+        if (state.dealer.isBlackjack) {
+          // Insurance pays 2:1 when dealer has blackjack
+          const insurancePayout = player.insuranceBet * 3 // Return bet + 2:1 winnings
+          totalPayout += insurancePayout
+          totalWinnings += player.insuranceBet * 2 // Net insurance winnings (2:1)
+        }
+        // If dealer doesn't have blackjack, insurance bet is already lost (taken during playerAction)
+      }
       
       // Update basic statistics for main hand
       updatedStats.handsPlayed++
-      updatedStats.totalWinnings += mainWinnings
+      updatedStats.totalWinnings += totalWinnings
       
-      if (mainWinner === 'player') {
-        updatedStats.handsWon++
-        if (player.hand.isBlackjack) {
-          updatedStats.blackjacks++
-        }
-      } else if (mainWinner === 'dealer') {
-        updatedStats.handsLost++
+      if (player.hasSurrendered) {
+        updatedStats.handsLost++ // Surrendered hands count as losses
       } else {
-        updatedStats.handsPushed++
+        const mainWinner = determineWinner(player.hand, state.dealer)
+        if (mainWinner === 'player') {
+          updatedStats.handsWon++
+          if (player.hand.isBlackjack) {
+            updatedStats.blackjacks++
+          }
+        } else if (mainWinner === 'dealer') {
+          updatedStats.handsLost++
+        } else {
+          updatedStats.handsPushed++
+        }
       }
 
       // Track advanced statistics for main hand
-      const mainResult = mainWinner === 'player' ? 'win' : 
-                        mainWinner === 'dealer' ? 'loss' : 'push'
-      statsTracker.recordHandResult(
-        mainResult, 
-        mainWinnings, 
-        player.hand.isBlackjack,
-        state.currentTableLevel,
-        state.currentGameVariant
-      )
+      if (player.hasSurrendered) {
+        statsTracker.recordHandResult(
+          'loss', 
+          totalWinnings, 
+          false, // Surrendered hands can't be blackjack
+          state.currentTableLevel,
+          state.currentGameVariant
+        )
+      } else {
+        const mainWinner = determineWinner(player.hand, state.dealer)
+        const mainResult = mainWinner === 'player' ? 'win' : 
+                          mainWinner === 'dealer' ? 'loss' : 'push'
+        statsTracker.recordHandResult(
+          mainResult, 
+          totalWinnings, 
+          player.hand.isBlackjack,
+          state.currentTableLevel,
+          state.currentGameVariant
+        )
+      }
       
       // Calculate payout for split hand if exists
       if (player.hasSplit && player.splitHand) {
@@ -516,6 +628,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         bet: 0,
         lastHandWinnings: totalWinnings,
         hasSplit: false,
+        hasSurrendered: false,
+        hasInsurance: false,
+        insuranceBet: 0,
         splitHand: undefined,
         isPlayingMainHand: undefined
       }
@@ -538,10 +653,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       bet: 0,
       canDouble: false,
       canSplit: false,
+      canSurrender: false,
+      canInsurance: false,
       hasSplit: false,
+      hasSurrendered: false,
+      hasInsurance: false,
+      insuranceBet: 0,
       splitHand: undefined,
       lastHandWinnings: undefined,
-      isPlayingMainHand: undefined
+      isPlayingMainHand: undefined,
+      splitCount: 0
     }))
 
     // Check if deck needs reshuffling (less than 20 cards remaining)
@@ -635,6 +756,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
         completed: false,
         steps: TUTORIAL_STEPS
       }
+    })
+  },
+
+  startVariantTutorial: (variant: GameVariant) => {
+    const variantSteps = VARIANT_TUTORIAL_STEPS[variant]
+    const variantRules = createRuleSet(variant)
+    set({
+      tutorial: {
+        currentStep: 0,
+        isActive: true,
+        completed: false,
+        steps: variantSteps
+      },
+      gameMode: 'tutorial',
+      currentGameVariant: variant,
+      rules: variantRules
     })
   },
 
@@ -760,10 +897,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentPlayer.canSplit
     )
 
-    set({ currentStrategyAdvice: advice })
+    set({ currentStrategyAdvice: advice });
   },
 
   clearStrategyAdvice: () => {
-    set({ currentStrategyAdvice: null })
+    set({ currentStrategyAdvice: null });
+  },
+
+  // Achievement methods
+  checkAchievements: () => {
+    const detailedStats = statsTracker.getStatisticsSummary();
+    const newAchievements = achievementEngine.checkAchievements(detailedStats);
+    
+    if (newAchievements.length > 0) {
+      set({ newlyUnlockedAchievements: newAchievements });
+    }
+  },
+
+  clearNewAchievements: () => {
+    set({ newlyUnlockedAchievements: [] });
+  }
   }
 }))

@@ -9,7 +9,7 @@ import { GameActions } from './GameActions'
 import { TitleScreen } from './TitleScreen'
 import { TutorialOverlay } from './TutorialOverlay'
 import { StatsScreen } from './StatsScreen'
-import { AnalyticsDashboard } from './AnalyticsDashboard'
+import { SaveLoadScreen } from './SaveLoadScreen'
 import { ResetConfirmation } from './ResetConfirmation'
 import { MenuWarning } from './MenuWarning'
 import { BankruptcyScreen } from './BankruptcyScreen'
@@ -19,6 +19,7 @@ import { SplitHand } from './SplitHand'
 import { AudioControls } from './AudioControls'
 import { MultiplayerLobby } from './MultiplayerLobby'
 import { MultiplayerGame } from './MultiplayerGame'
+import { AchievementNotification } from './AchievementNotification'
 import { useAudio } from '@/hooks/useAudio'
 import { useGameSounds } from '@/hooks/useGameSounds'
 import { useDynamicMusic } from '@/hooks/useDynamicMusic'
@@ -49,7 +50,9 @@ export function BlackjackGame() {
     recordMenuExit,
     takeLoan,
     updateStrategyAdvice,
-    clearStrategyAdvice
+    clearStrategyAdvice,
+    newlyUnlockedAchievements,
+    clearNewAchievements
   } = useGameStore()
 
   const currentPlayer = players[currentPlayerIndex]
@@ -96,8 +99,6 @@ export function BlackjackGame() {
   // State for menu warning
   const [showMenuWarning, setShowMenuWarning] = useState(false)
   
-  // State for analytics dashboard
-  const [showAnalytics, setShowAnalytics] = useState(false)
   
   // Check for bankruptcy - only show after a round completes, not at the start
   const isBankrupt = mainPlayer && mainPlayer.chips === 0 && mainPlayer.bet === 0 && (phase === 'finished' || phase === 'betting')
@@ -232,6 +233,19 @@ export function BlackjackGame() {
       />
     )
   }
+  
+  // Show save/load screen if in saveload mode
+  if (gameMode === 'saveload') {
+    return (
+      <SaveLoadScreen
+        onBack={() => setGameMode('menu')}
+        onProfileLoaded={() => {
+          // Reload the page to refresh all game state with loaded profile
+          window.location.reload()
+        }}
+      />
+    )
+  }
 
   // Show help screen if in help mode
   if (gameMode === 'help') {
@@ -300,12 +314,6 @@ export function BlackjackGame() {
                 className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
               >
                 ← Menu
-              </button>
-              <button
-                onClick={() => setShowAnalytics(true)}
-                className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
-              >
-                📊 Analytics
               </button>
             </div>
             <div className="absolute left-1/2 transform -translate-x-1/2 text-yellow-400 font-semibold text-sm sm:text-base">
@@ -450,12 +458,14 @@ export function BlackjackGame() {
         isVisible={gameMode === 'easy' && phase === 'playing'}
       />
 
-      {/* Analytics Dashboard */}
-      {showAnalytics && (
-        <AnalyticsDashboard
-          onClose={() => setShowAnalytics(false)}
+      {/* Achievement Notification */}
+      {newlyUnlockedAchievements.length > 0 && (
+        <AchievementNotification
+          achievements={newlyUnlockedAchievements}
+          onClose={clearNewAchievements}
         />
       )}
+
     </div>
   )
 }

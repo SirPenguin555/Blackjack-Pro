@@ -11,6 +11,8 @@ export function GameActions({ player, onAction, disabled = false }: GameActionsP
   const canStand = !player.hand.isBusted
   const canDouble = player.canDouble && player.chips >= player.bet
   const canSplit = player.canSplit && player.chips >= player.bet
+  const canSurrender = player.canSurrender
+  const canInsurance = player.canInsurance && player.chips >= Math.floor(player.bet / 2)
 
   return (
     <div className="flex flex-wrap gap-2 justify-center">
@@ -47,6 +49,26 @@ export function GameActions({ player, onAction, disabled = false }: GameActionsP
           className="px-3 py-2 sm:px-4 text-sm sm:text-base bg-yellow-600 text-black rounded hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Split
+        </button>
+      )}
+      
+      {canSurrender && (
+        <button
+          onClick={() => onAction('surrender')}
+          disabled={disabled}
+          className="px-3 py-2 sm:px-4 text-sm sm:text-base bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Surrender
+        </button>
+      )}
+      
+      {canInsurance && (
+        <button
+          onClick={() => onAction('insurance')}
+          disabled={disabled}
+          className="px-3 py-2 sm:px-4 text-sm sm:text-base bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Insurance
         </button>
       )}
     </div>

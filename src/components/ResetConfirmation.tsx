@@ -22,7 +22,8 @@ export function ResetConfirmation({ onConfirm, onCancel }: ResetConfirmationProp
               <div className="mb-2 font-semibold">This will reset:</div>
               <ul className="space-y-1 ml-4">
                 <li>• All statistics (wins, losses, games played)</li>
-                <li>• Your chip balance back to $1000</li>
+                <li>• Your chip balance back to $250</li>
+                <li>• All achievements and progress</li>
                 <li>• Current game progress</li>
               </ul>
             </div>

@@ -203,3 +203,34 @@ export class VariationEngine {
 
 // Global instance for easy access
 export const variationEngine = new VariationEngine()
+
+// Helper functions for backward compatibility
+export function createRuleSet(variant: GameVariant): RuleSet {
+  return RULE_CONFIGURATIONS[variant]
+}
+
+export function canPlayerSplit(rules: RuleSet): boolean {
+  return rules.resplitToFourHands
+}
+
+export function canPlayerSurrender(rules: RuleSet): boolean {
+  return rules.surrenderAllowed
+}
+
+export function canPlayerDoubleAfterSplit(rules: RuleSet): boolean {
+  return rules.doubleAfterSplit
+}
+
+export function getDealerAction(rules: RuleSet, dealerValue: number, isSoft: boolean): 'hit' | 'stand' {
+  if (dealerValue < 17) {
+    return 'hit'
+  } else if (dealerValue === 17 && isSoft && rules.dealerHitsSoft17) {
+    return 'hit'
+  } else {
+    return 'stand'
+  }
+}
+
+export function getBlackjackPayout(rules: RuleSet): number {
+  return rules.blackjackPayout
+}

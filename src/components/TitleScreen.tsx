@@ -1,10 +1,34 @@
+import { useState } from 'react'
 import { GameMode } from '@/types/game'
+import { TableLevel, getTableConfiguration } from '@/lib/tableSystem'
+import { GameVariant, RULE_CONFIGURATIONS } from '@/lib/ruleVariations'
+import { TableSelector } from './TableSelector'
+import { VariantSelector } from './VariantSelector'
+import { useGameStore } from '@/store/gameStore'
 
 interface TitleScreenProps {
   onModeSelect: (mode: GameMode) => void
 }
 
 export function TitleScreen({ onModeSelect }: TitleScreenProps) {
+  const [showTableSelector, setShowTableSelector] = useState(false)
+  const [showVariantSelector, setShowVariantSelector] = useState(false)
+  const [showTutorialDropdown, setShowTutorialDropdown] = useState(false)
+  
+  const { 
+    currentTableLevel, 
+    currentGameVariant, 
+    setTableLevel, 
+    setGameVariant,
+    startVariantTutorial,
+    players,
+    stats 
+  } = useGameStore()
+  
+  const currentPlayer = players[0]
+  const currentTableConfig = getTableConfiguration(currentTableLevel)
+  const currentVariantConfig = RULE_CONFIGURATIONS[currentGameVariant]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full text-center">
@@ -33,13 +57,71 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
             <div className="text-sm opacity-90">Classic blackjack experience</div>
           </button>
 
-          <button
-            onClick={() => onModeSelect('tutorial')}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
-          >
-            <div className="text-xl">Tutorial</div>
-            <div className="text-sm opacity-90">Learn the rules step-by-step</div>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowTutorialDropdown(!showTutorialDropdown)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105 flex items-center justify-between"
+            >
+              <div className="text-left">
+                <div className="text-xl">Tutorial</div>
+                <div className="text-sm opacity-90">Learn the rules step-by-step</div>
+              </div>
+              <div className="text-xl">
+                {showTutorialDropdown ? '▲' : '▼'}
+              </div>
+            </button>
+            
+            {showTutorialDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-blue-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                <button
+                  onClick={() => {
+                    onModeSelect('tutorial')
+                    setShowTutorialDropdown(false)
+                  }}
+                  className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors border-b border-blue-600"
+                >
+                  <div className="text-white font-semibold">Basic Tutorial</div>
+                  <div className="text-blue-200 text-sm">Learn fundamental blackjack rules</div>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    startVariantTutorial('vegas')
+                    onModeSelect('tutorial')
+                    setShowTutorialDropdown(false)
+                  }}
+                  className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors border-b border-blue-600"
+                >
+                  <div className="text-white font-semibold">Vegas Rules Tutorial</div>
+                  <div className="text-blue-200 text-sm">Classic Las Vegas casino rules</div>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    startVariantTutorial('european')
+                    onModeSelect('tutorial')
+                    setShowTutorialDropdown(false)
+                  }}
+                  className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors border-b border-blue-600"
+                >
+                  <div className="text-white font-semibold">European Rules Tutorial</div>
+                  <div className="text-blue-200 text-sm">No hole card, dealer stands soft 17</div>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    startVariantTutorial('atlantic_city')
+                    onModeSelect('tutorial')
+                    setShowTutorialDropdown(false)
+                  }}
+                  className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors"
+                >
+                  <div className="text-white font-semibold">Atlantic City Tutorial</div>
+                  <div className="text-blue-200 text-sm">Surrender allowed, can resplit Aces</div>
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => onModeSelect('easy')}
@@ -61,7 +143,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
             onClick={() => onModeSelect('stats')}
             className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
-            <div className="text-lg">📊 View Statistics</div>
+            <div className="text-lg">🏆 Stats & Achievements</div>
           </button>
 
           <button
@@ -72,11 +154,47 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
           </button>
 
           <button
+            onClick={() => onModeSelect('saveload')}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+          >
+            <div className="text-lg">💾 Save & Load</div>
+          </button>
+
+          <button
             onClick={() => onModeSelect('reset')}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-lg">🔄 Reset Progress</div>
           </button>
+        </div>
+
+        {/* Table and Variant Selection */}
+        <div className="mt-8 space-y-4 max-w-md mx-auto">
+          <div className="bg-black bg-opacity-30 rounded-lg p-4">
+            <h3 className="text-white font-semibold mb-3">Game Settings</h3>
+            
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowTableSelector(true)}
+                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded transition-colors duration-200 text-sm"
+              >
+                <div className="flex justify-between items-center">
+                  <span>🎯 Table: {currentTableConfig.name}</span>
+                  <span className="text-xs opacity-75">Change</span>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setShowVariantSelector(true)}
+                className="w-full bg-purple-700 hover:bg-purple-800 text-white font-medium py-2 px-4 rounded transition-colors duration-200 text-sm"
+              >
+                <div className="flex justify-between items-center">
+                  <span>🃏 Rules: {currentVariantConfig.name}</span>
+                  <span className="text-xs opacity-75">Change</span>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Features */}
@@ -102,9 +220,35 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
 
         {/* Footer */}
         <div className="mt-8 text-green-300 text-sm">
-          Version Beta 3.0 • Singleplayer Fully Stable
+          Version Beta 4.0 • Progressive Tables & Variants
         </div>
       </div>
+
+      {/* Table Selector Modal */}
+      {showTableSelector && (
+        <TableSelector
+          currentLevel={currentTableLevel}
+          playerChips={currentPlayer?.chips || 0}
+          stats={stats}
+          onTableSelect={(level) => {
+            setTableLevel(level)
+            setShowTableSelector(false)
+          }}
+          onClose={() => setShowTableSelector(false)}
+        />
+      )}
+
+      {/* Variant Selector Modal */}
+      {showVariantSelector && (
+        <VariantSelector
+          currentVariant={currentGameVariant}
+          onVariantSelect={(variant) => {
+            setGameVariant(variant)
+            setShowVariantSelector(false)
+          }}
+          onClose={() => setShowVariantSelector(false)}
+        />
+      )}
     </div>
   )
 }

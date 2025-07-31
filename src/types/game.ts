@@ -23,7 +23,12 @@ export interface Player {
   bet: number
   canDouble: boolean
   canSplit: boolean
+  canSurrender: boolean
+  canInsurance: boolean
   hasSplit: boolean
+  hasSurrendered: boolean
+  hasInsurance: boolean
+  insuranceBet: number
   splitHand?: Hand
   position: number
   lastHandWinnings?: number
@@ -41,9 +46,9 @@ export interface GameState {
   rules?: import('../lib/ruleVariations').RuleSet
 }
 
-export type GameAction = 'hit' | 'stand' | 'double' | 'split'
+export type GameAction = 'hit' | 'stand' | 'double' | 'split' | 'surrender' | 'insurance'
 
-export type GameMode = 'menu' | 'normal' | 'tutorial' | 'easy' | 'stats' | 'reset' | 'help' | 'multiplayer'
+export type GameMode = 'menu' | 'normal' | 'tutorial' | 'easy' | 'stats' | 'reset' | 'help' | 'multiplayer' | 'saveload'
 
 export interface ChipDenomination {
   value: number

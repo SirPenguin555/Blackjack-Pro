@@ -84,8 +84,8 @@ Unlike simplified mobile games, we implement true casino rules (dealer stands on
 
 - **Multiple Tables:** Progressive betting levels that unlock with experience and bankroll growth
 - **Blackjack Variations:** Different rule sets and game types that unlock as players advance
-- **Tournament System:** Organized competitions with leaderboards and special rewards
-- **Save/Load System:** Progress preservation through codes and browser storage
+- **Tournament System:** Organized competitions with leaderboards and special rewards *(In Development)*
+- **Save/Load System:** Progress preservation through exportable codes and browser storage ✅
 
 ### Social Features
 

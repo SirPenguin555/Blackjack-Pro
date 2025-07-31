@@ -23,6 +23,12 @@ export interface UnlockProgress {
   }
 }
 
+export interface UnlockProgressInfo {
+  chipRequirement: number
+  handsRequirement: number
+  winRateRequirement: number
+}
+
 export class TableUnlockService {
   /**
    * Calculate the player's win rate as a percentage
@@ -223,4 +229,45 @@ export class TableUnlockService {
       canAfford: true
     }
   }
+
+  /**
+   * Check if a table is unlocked based on stats
+   */
+  isTableUnlocked(level: TableLevel, stats: GameStats): boolean {
+    const config = TABLE_CONFIGURATIONS[level]
+    const requirements = config.unlockRequirements
+    const playerWinRate = this.calculateWinRate(stats)
+
+    // Check all requirements (assuming player has enough chips if they've played games)
+    const hasEnoughHands = stats.handsPlayed >= requirements.handsPlayed
+    const hasEnoughWinRate = playerWinRate >= requirements.winRate
+    
+    // For stats screen, we'll assume they have minimum chips if they meet other requirements
+    // This is because the stats screen doesn't have access to current chip count
+    const estimatedChips = Math.max(stats.totalWinnings, requirements.minimumChips)
+    const hasEnoughChips = estimatedChips >= requirements.minimumChips
+
+    return hasEnoughChips && hasEnoughHands && hasEnoughWinRate
+  }
+
+  /**
+   * Get unlock progress information for a table level
+   */
+  getUnlockProgress(level: TableLevel, stats: GameStats): UnlockProgressInfo {
+    const config = TABLE_CONFIGURATIONS[level]
+    const requirements = config.unlockRequirements
+    const playerWinRate = this.calculateWinRate(stats)
+    
+    // Estimate player chips based on total winnings
+    const estimatedChips = Math.max(stats.totalWinnings, 0)
+
+    return {
+      chipRequirement: Math.max(0, requirements.minimumChips - estimatedChips),
+      handsRequirement: Math.max(0, requirements.handsPlayed - stats.handsPlayed),
+      winRateRequirement: Math.max(0, requirements.winRate - playerWinRate)
+    }
+  }
 }
+
+// Export singleton instance
+export const tableUnlockService = new TableUnlockService()

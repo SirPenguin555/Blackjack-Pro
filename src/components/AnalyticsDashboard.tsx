@@ -65,25 +65,24 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+    <div className="w-full">
+      <div className="bg-blue-800 bg-opacity-70 rounded-lg shadow-xl w-full max-h-[80vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Analytics Dashboard
+        <div className="flex items-center justify-between p-6 border-b border-blue-700">
+          <h2 className="text-2xl font-bold text-yellow-400">
+            Advanced Statistics
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
-                       text-2xl font-bold w-8 h-8 flex items-center justify-center
-                       hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            className="text-yellow-400 hover:text-yellow-300 text-2xl font-bold w-8 h-8 flex items-center justify-center
+                       hover:bg-blue-700 rounded"
           >
             ×
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-blue-700">
           <nav className="flex space-x-8 px-6">
             {[
               { id: 'overview', label: 'Overview' },
@@ -98,8 +97,8 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
                 onClick={() => setActiveTab(tab.id as TabType)}
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'border-green-500 text-green-600 dark:text-green-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    ? 'border-yellow-400 text-yellow-400'
+                    : 'border-transparent text-blue-200 hover:text-yellow-300'
                 }`}
               >
                 {tab.label}
@@ -109,7 +108,7 @@ export function AnalyticsDashboard({ onClose }: AnalyticsDashboardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
           {activeTab === 'overview' && <OverviewTab summary={summary} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />}
           {activeTab === 'tables' && <TablesTab summary={summary} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />}
           {activeTab === 'variants' && <VariantsTab summary={summary} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />}

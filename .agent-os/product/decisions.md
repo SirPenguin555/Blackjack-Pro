@@ -82,3 +82,37 @@ Phase 2 focused on creating an accessible learning experience for beginners whil
 - Increased complexity may require more testing for edge cases
 - Strategy advice system adds computational overhead
 - Tutorial system requires careful UI/UX balance to avoid overwhelming new users
+
+## 2025-07-31: Critical Bug Fixes and Feature Completion
+
+**ID:** DEC-003
+**Status:** Accepted
+**Category:** Technical
+**Stakeholders:** Development Team, Players
+
+### Decision
+
+Completed comprehensive bug fixes for game integrity issues and implemented missing core features including insurance payouts, surrender functionality, variant rule authenticity, and save/load system.
+
+### Context
+
+During final testing and user feedback, several critical issues were identified that affected game integrity and player experience:
+1. Insurance bets were taken but never paid out when dealer had blackjack
+2. Atlantic City surrender feature was missing from UI despite being implemented in game logic
+3. European variant showed dealer total as 0 due to incorrect card dealing logic
+4. Variant tutorials used default rules instead of variant-specific rules
+5. Save/load system was missing despite being a core Phase 5 feature
+
+### Consequences
+
+**Positive:**
+- Game now has complete integrity for all blackjack scenarios
+- All three variants (Vegas, European, Atlantic City) work authentically
+- Players can save and restore progress with portable codes
+- Insurance and surrender mechanics work correctly across all variants
+- Tutorial system provides accurate rule education for each variant
+
+**Negative:**
+- Additional complexity in game state management
+- Increased testing surface area for variant-specific behaviors
+- Save/load system requires careful user education about data portability
