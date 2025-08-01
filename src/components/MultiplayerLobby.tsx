@@ -16,6 +16,8 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
     playerName,
     createTable,
     joinTable,
+    joinTableByCode,
+    findTableByCode,
     setPlayerName,
     setConnectionStatus,
     initialize
@@ -23,6 +25,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showJoinForm, setShowJoinForm] = useState(false)
+  const [showJoinByCodeForm, setShowJoinByCodeForm] = useState(false)
   const [showCustomSettings, setShowCustomSettings] = useState(false)
   const [selectedTable, setSelectedTable] = useState<GameTable | null>(null)
   const [formData, setFormData] = useState({
@@ -64,6 +67,16 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
   }
   const [tempPlayerName, setTempPlayerName] = useState(playerName)
   const [joinPassword, setJoinPassword] = useState('')
+  const [joinByCodeData, setJoinByCodeData] = useState({
+    tableCode: '',
+    playerName: '',
+    password: ''
+  })
+
+  // Keep join by code player name in sync
+  useEffect(() => {
+    setJoinByCodeData(prev => ({ ...prev, playerName: tempPlayerName }))
+  }, [tempPlayerName])
   const [isLoading, setIsLoading] = useState(false)
 
   // Initialize authentication for demo purposes
@@ -142,6 +155,34 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
       setShowJoinForm(false)
       setSelectedTable(null)
       setJoinPassword('')
+    }
+  }
+
+  const handleJoinByCode = async () => {
+    if (!joinByCodeData.tableCode.trim() || !joinByCodeData.playerName.trim()) return
+
+    setIsLoading(true)
+    try {
+      setPlayerName(joinByCodeData.playerName)
+      
+      await joinTableByCode(
+        joinByCodeData.tableCode.toUpperCase(),
+        joinByCodeData.playerName,
+        joinByCodeData.password || undefined
+      )
+
+      console.log('Joined table by code:', joinByCodeData.tableCode)
+    } catch (error) {
+      console.error('Failed to join table by code:', error)
+      alert(error instanceof Error ? error.message : 'Failed to join table. Please check the code and try again.')
+    } finally {
+      setIsLoading(false)
+      setShowJoinByCodeForm(false)
+      setJoinByCodeData({
+        tableCode: '',
+        playerName: joinByCodeData.playerName,
+        password: ''
+      })
     }
   }
 
@@ -232,7 +273,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
         </div>
 
         {/* Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <button
             onClick={() => setShowCreateForm(true)}
             disabled={!tempPlayerName.trim() || isLoading}
@@ -249,6 +290,15 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
           >
             <h3 className="text-xl font-bold mb-2">Join Table</h3>
             <p>Join an existing game</p>
+          </button>
+          
+          <button
+            onClick={() => setShowJoinByCodeForm(true)}
+            disabled={!tempPlayerName.trim() || isLoading}
+            className="bg-purple-600 text-white p-6 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <h3 className="text-xl font-bold mb-2">Join by Code</h3>
+            <p>Enter a 6-character table code</p>
           </button>
         </div>
 
@@ -269,6 +319,9 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                     <p className="text-sm text-gray-500">
                       {table.currentPlayers}/{table.maxPlayers} players
                       {table.isPrivate && ' • Private'}
+                    </p>
+                    <p className="text-xs text-blue-600 font-mono">
+                      Code: {table.tableCode}
                     </p>
                   </div>
                   <button
@@ -458,6 +511,78 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                   onClick={handleJoinTable}
                   disabled={isLoading || (selectedTable.isPrivate && !joinPassword.trim())}
                   className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Joining...' : 'Join Table'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Join by Code Modal */}
+        {showJoinByCodeForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-xl font-bold mb-4">Join Table by Code</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Table Code
+                  </label>
+                  <input
+                    type="text"
+                    value={joinByCodeData.tableCode}
+                    onChange={(e) => setJoinByCodeData(prev => ({ 
+                      ...prev, 
+                      tableCode: e.target.value.toUpperCase().slice(0, 6) 
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-center text-lg tracking-widest"
+                    placeholder="ABC123"
+                    maxLength={6}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Enter the 6-character code shared by the host</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={joinByCodeData.playerName}
+                    onChange={(e) => setJoinByCodeData(prev => ({ ...prev, playerName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Enter your name"
+                    maxLength={20}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password (if private)
+                  </label>
+                  <input
+                    type="password"
+                    value={joinByCodeData.password}
+                    onChange={(e) => setJoinByCodeData(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Leave blank if not required"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => setShowJoinByCodeForm(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleJoinByCode}
+                  disabled={isLoading || !joinByCodeData.tableCode.trim() || !joinByCodeData.playerName.trim()}
+                  className="flex-1 bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Joining...' : 'Join Table'}
                 </button>

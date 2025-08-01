@@ -175,14 +175,25 @@ export default function DealerMode({ onExit }: DealerModeProps) {
   }
 
   const processAITurn = () => {
+    console.log(`\n=== processAITurn START ===`)
+    console.log(`currentPlayerIndex=${currentPlayerIndex}, totalPlayers=${aiPlayers.length}`)
+    
     if (currentPlayerIndex >= aiPlayers.length) {
+      console.log('All players finished, moving to dealer phase')
       setPhase('dealer')
-      setTimeout(playDealerHand, getSpeedDelay())
+      setTimeout(() => {
+        playDealerHand()
+      }, getSpeedDelay())
       return
     }
 
     const player = aiPlayers[currentPlayerIndex]
+    
+    console.log(`Processing ${player.name}: busted=${player.hasBusted}, stood=${player.hasStood}, hand value=${player.hand.value}`)
+    console.log(`Player hand:`, player.hand.cards.map(c => `${c.rank}${c.suit}`).join(', '))
+    
     if (player.hasBusted || player.hasStood) {
+      console.log(`${player.name} already finished, skipping to next player`)
       setCurrentPlayerIndex(prev => prev + 1)
       setTimeout(processAITurn, getSpeedDelay() / 2)
       return
@@ -191,41 +202,71 @@ export default function DealerMode({ onExit }: DealerModeProps) {
     const dealerUpCard = dealerHand.cards.find(card => !card.hidden)!
     const action = makeAIDecision(player, dealerUpCard)
 
+    console.log(`${player.name} (${player.strategy}) has ${player.hand.value}, dealer shows ${dealerUpCard.rank}, decision: ${action}`)
+
     if (action === 'hit') {
       const { card, remainingDeck } = dealCard(deck)
+      const newHand = addCardToHand(player.hand, card)
+      const playerBusted = newHand.isBusted
+      
+      console.log(`${player.name} drew ${card.rank}${card.suit}, new total: ${newHand.value}, busted: ${playerBusted}`)
+      
+      // Update deck
       setDeck(remainingDeck)
       
-      setAiPlayers(prev => prev.map((p, index) => {
-        if (index === currentPlayerIndex) {
-          const newHand = addCardToHand(p.hand, card)
-          return {
-            ...p,
-            hand: newHand,
-            hasBusted: newHand.isBusted
+      // Update player with new hand - use functional update to avoid stale state
+      setAiPlayers(prevPlayers => {
+        return prevPlayers.map((p, index) => {
+          if (index === currentPlayerIndex) {
+            return {
+              ...p,
+              hand: newHand,
+              hasBusted: playerBusted
+            }
           }
+          return p
+        })
+      })
+      
+      // Schedule next action
+      setTimeout(() => {
+        if (playerBusted) {
+          console.log(`${player.name} busted! Advancing to next player`)
+          setCurrentPlayerIndex(prev => prev + 1)
         }
-        return p
-      }))
-    } else {
-      setAiPlayers(prev => prev.map((p, index) => {
-        if (index === currentPlayerIndex) {
-          return { ...p, hasStood: true }
-        }
-        return p
-      }))
-    }
-
-    setTimeout(() => {
-      if (action === 'stand' || aiPlayers[currentPlayerIndex].hasBusted) {
+        setTimeout(processAITurn, getSpeedDelay() / 2)
+      }, getSpeedDelay())
+      
+    } else if (action === 'stand') {
+      console.log(`${player.name} stands with ${player.hand.value}! Advancing to next player`)
+      
+      // Mark player as stood
+      setAiPlayers(prevPlayers => {
+        return prevPlayers.map((p, index) => {
+          if (index === currentPlayerIndex) {
+            return { ...p, hasStood: true }
+          }
+          return p
+        })
+      })
+      
+      // Advance to next player
+      setTimeout(() => {
         setCurrentPlayerIndex(prev => prev + 1)
-      }
-      processAITurn()
-    }, getSpeedDelay())
+        setTimeout(processAITurn, getSpeedDelay() / 2)
+      }, getSpeedDelay())
+    }
+    
+    console.log(`=== processAITurn END ===\n`)
   }
 
   const playDealerHand = () => {
+    console.log('playDealerHand called!')
+    console.log('Dealer hand before reveal:', dealerHand)
+    
     // Reveal dealer's hidden card
     const revealedHand = createHand(dealerHand.cards.map(card => ({ ...card, hidden: false })))
+    console.log('Revealed dealer hand:', revealedHand)
     setDealerHand(revealedHand)
 
     setTimeout(() => {
@@ -233,15 +274,19 @@ export default function DealerMode({ onExit }: DealerModeProps) {
       let currentDeck = [...deck]
 
       const dealNextCard = () => {
+        console.log(`Dealer has ${currentDealerHand.value}, checking if < 17`)
         if (currentDealerHand.value < 17) {
+          console.log('Dealer hits (< 17)')
           const { card, remainingDeck } = dealCard(currentDeck)
           currentDeck = remainingDeck
           currentDealerHand = addCardToHand(currentDealerHand, card)
+          console.log(`Dealer drew ${card.rank} of ${card.suit}, new total: ${currentDealerHand.value}`)
           setDealerHand(currentDealerHand)
           setDeck(currentDeck)
           
           setTimeout(dealNextCard, getSpeedDelay())
         } else {
+          console.log(`Dealer stands on ${currentDealerHand.value}, finishing round`)
           setTimeout(finishRound, getSpeedDelay())
         }
       }
@@ -421,7 +466,7 @@ export default function DealerMode({ onExit }: DealerModeProps) {
                 }`}
               >
                 <div className="text-center">
-                  <h3 className="font-bold text-lg mb-1">{player.name}</h3>
+                  <h3 className="font-bold text-lg mb-1 text-black">{player.name}</h3>
                   <p className="text-sm text-gray-600 mb-2">
                     {player.strategy.charAt(0).toUpperCase() + player.strategy.slice(1)} Player
                   </p>
@@ -444,12 +489,12 @@ export default function DealerMode({ onExit }: DealerModeProps) {
                     ))}
                   </div>
                   
-                  <div className="text-sm">
+                  <div className="text-sm text-gray-800">
                     {player.hand.cards.length > 0 && (
                       <>
                         <div>Value: {player.hand.value}</div>
                         {player.hasBusted && <div className="text-red-600 font-bold">BUSTED!</div>}
-                        {player.hasStood && <div className="text-blue-600">STOOD</div>}
+                        {player.hasStood && <div className="text-blue-600 font-bold">STOOD</div>}
                         {player.hand.isBlackjack && <div className="text-yellow-600 font-bold">BLACKJACK!</div>}
                       </>
                     )}
@@ -466,7 +511,7 @@ export default function DealerMode({ onExit }: DealerModeProps) {
               {phase === 'dealing' && 'Dealing cards...'}
               {phase === 'playing' && currentPlayerIndex < aiPlayers.length && aiPlayers[currentPlayerIndex] 
                 ? `${aiPlayers[currentPlayerIndex].name}'s turn` 
-                : 'Player turn'}
+                : phase === 'playing' ? 'Moving to dealer...' : ''}
               {phase === 'dealer' && 'Dealer playing...'}
               {phase === 'finished' && 'Round finished!'}
             </div>

@@ -163,13 +163,6 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
             <div className="text-sm opacity-90">Compete in organized competitions</div>
           </button>
 
-          <button
-            onClick={() => onModeSelect('dealer')}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
-          >
-            <div className="text-xl">🎲 Dealer Mode</div>
-            <div className="text-sm opacity-90">Play as the house with AI players</div>
-          </button>
 
           <button
             onClick={() => onModeSelect('stats')}
@@ -229,30 +222,9 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
           </div>
         </div>
 
-        {/* Features */}
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-          <div className="bg-blue-800 bg-opacity-70 rounded-lg p-4">
-            <div className="text-2xl mb-2">🎯</div>
-            <div className="text-white font-semibold">Casino Rules</div>
-            <div className="text-green-200 text-sm">Authentic blackjack gameplay</div>
-          </div>
-          
-          <div className="bg-blue-800 bg-opacity-70 rounded-lg p-4">
-            <div className="text-2xl mb-2">🎓</div>
-            <div className="text-white font-semibold">Learn & Practice</div>
-            <div className="text-green-200 text-sm">Interactive tutorials included</div>
-          </div>
-          
-          <div className="bg-blue-800 bg-opacity-70 rounded-lg p-4">
-            <div className="text-2xl mb-2">📱</div>
-            <div className="text-white font-semibold">Mobile Friendly</div>
-            <div className="text-green-200 text-sm">Play anywhere, anytime</div>
-          </div>
-        </div>
-
         {/* Footer */}
         <div className="mt-8 text-green-300 text-sm">
-          Version Beta 4.0 • Progressive Tables & Variants
+          Version 1.0
         </div>
       </div>
 

@@ -8,7 +8,7 @@ interface HelpScreenProps {
 }
 
 export function HelpScreen({ onBack }: HelpScreenProps) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'variants' | 'tables' | 'multiplayer'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'variants' | 'tables' | 'multiplayer' | 'dealer' | 'tournaments' | 'challenges' | 'patches'>('basic')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900 p-4">
@@ -68,6 +68,46 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
             }`}
           >
             👥 Multiplayer Guide
+          </button>
+          <button
+            onClick={() => setActiveTab('dealer')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'dealer' 
+                ? 'bg-red-600 text-white' 
+                : 'bg-transparent text-red-300 hover:bg-red-600 hover:bg-opacity-50'
+            }`}
+          >
+            🎭 Dealer Mode
+          </button>
+          <button
+            onClick={() => setActiveTab('tournaments')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'tournaments' 
+                ? 'bg-yellow-600 text-white' 
+                : 'bg-transparent text-yellow-300 hover:bg-yellow-600 hover:bg-opacity-50'
+            }`}
+          >
+            🏆 Tournaments
+          </button>
+          <button
+            onClick={() => setActiveTab('challenges')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'challenges' 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-transparent text-indigo-300 hover:bg-indigo-600 hover:bg-opacity-50'
+            }`}
+          >
+            💰 Bankroll Challenges
+          </button>
+          <button
+            onClick={() => setActiveTab('patches')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors m-1 ${
+              activeTab === 'patches' 
+                ? 'bg-orange-600 text-white' 
+                : 'bg-transparent text-orange-300 hover:bg-orange-600 hover:bg-opacity-50'
+            }`}
+          >
+            📝 Patch Notes
           </button>
         </div>
 
@@ -499,6 +539,192 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
                       <p>• Use chat to enhance the social experience</p>
                       <p>• Learn by observing experienced players</p>
                       <p>• Keep the game moving - make decisions promptly</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* Dealer Mode Tab */}
+          {activeTab === 'dealer' && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-bold text-yellow-400 mb-4">🎭 Dealer Mode Guide</h2>
+                
+                <div className="space-y-6">
+                  <div className="bg-red-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold text-red-400 mb-4">Playing as the Dealer</h3>
+                    <div className="text-white space-y-3">
+                      <p>In Dealer Mode, you take on the role of the casino dealer while AI players compete at your table.</p>
+                      
+                      <div className="bg-red-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-red-300 mb-2">How It Works:</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Watch as AI players (Sarah, Mike, Lisa) place bets and make decisions</li>
+                          <li>Each AI player has a different strategy: Basic, Aggressive, or Conservative</li>
+                          <li>You automatically deal cards and play the dealer hand according to casino rules</li>
+                          <li>Collect winnings when players bust or have lower hands than you</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-red-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-red-300 mb-2">Game Controls:</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Adjust game speed (Slow, Normal, Fast) to control the pace</li>
+                          <li>Watch your house bankroll grow as you win hands</li>
+                          <li>Start new rounds after each hand is complete</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-red-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-red-300 mb-2">AI Player Strategies:</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li><strong>Basic Strategy:</strong> Uses mathematically optimal decisions</li>
+                          <li><strong>Aggressive:</strong> Takes more risks, hits more often</li>
+                          <li><strong>Conservative:</strong> Plays it safe, stands on lower totals</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* Tournaments Tab */}
+          {activeTab === 'tournaments' && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-bold text-yellow-400 mb-4">🏆 Tournament Guide</h2>
+                
+                <div className="space-y-6">
+                  <div className="bg-yellow-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-4">Tournament Types</h3>
+                    <div className="text-white space-y-4">
+                      
+                      <div className="bg-yellow-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-yellow-300 mb-2">🥊 Elimination Tournaments</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Players are eliminated when they go bankrupt</li>
+                          <li>Last player standing wins the prize pool</li>
+                          <li>Higher stakes and faster pace</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-yellow-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-yellow-300 mb-2">📊 Leaderboard Tournaments</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Compete for highest chip count within time limit</li>
+                          <li>All players can participate until time runs out</li>
+                          <li>Prize distribution based on final rankings</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-yellow-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-yellow-300 mb-2">🏃 Survival Tournaments</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Survive multiple rounds with increasing difficulty</li>
+                          <li>Starting chips decrease each round</li>
+                          <li>Unique challenge format for experienced players</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-red-700 bg-opacity-50 p-4 rounded mt-4">
+                        <p className="text-sm text-red-200">
+                          <strong>⚠️ Note:</strong> Tournament functionality may be limited due to lack of multiplayer testing. 
+                          Single-player modes are recommended for the most stable experience.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* Bankroll Challenges Tab */}
+          {activeTab === 'challenges' && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-bold text-yellow-400 mb-4">💰 Bankroll Challenges</h2>
+                
+                <div className="space-y-6">
+                  <div className="bg-indigo-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold text-indigo-400 mb-4">Challenge Types</h3>
+                    <div className="text-white space-y-4">
+                      
+                      <div className="bg-indigo-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-indigo-300 mb-2">🎯 Target Challenges</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Reach a specific chip target within a set number of hands</li>
+                          <li>Test your ability to grow your bankroll consistently</li>
+                          <li>Various difficulty levels with different targets</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-indigo-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-indigo-300 mb-2">⏱️ Time Challenges</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Maximize winnings within a time limit</li>
+                          <li>Fast-paced decision making under pressure</li>
+                          <li>Leaderboard tracking for competitive players</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-indigo-700 bg-opacity-50 p-4 rounded">
+                        <h4 className="font-semibold text-indigo-300 mb-2">🎲 Risk Challenges</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside ml-4">
+                          <li>Special scenarios with modified rules</li>
+                          <li>High-risk, high-reward gameplay</li>
+                          <li>Unique betting patterns and constraints</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-gray-700 bg-opacity-50 p-4 rounded mt-4">
+                        <p className="text-sm text-gray-300">
+                          <strong>📊 Coming Soon:</strong> Bankroll Challenges are currently in development. 
+                          Check back in future updates for these exciting gameplay modes!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* Patch Notes Tab */}
+          {activeTab === 'patches' && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-bold text-yellow-400 mb-4">📝 Patch Notes</h2>
+                
+                <div className="space-y-6">
+                  <div className="bg-orange-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold text-orange-400 mb-4">Beta 6.0 - Latest Updates</h3>
+                    <div className="text-white space-y-3">
+                      <div className="bg-green-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-green-300">✅ New Features</p>
+                        <div className="text-sm mt-2">
+                          <p>First fully-stable release for singleplayer modes</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-blue-300">🔧 Bug Fixes</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>No bugfixes for now.</p>
+                          <p>If you find any bugs, please report them.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-yellow-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-yellow-300">📝 Notes</p>
+                        <div className="text-sm mt-2">
+                          <p>Due to a lack of playtesting, multiplayer modes may not work.</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

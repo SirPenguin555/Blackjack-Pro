@@ -19,6 +19,8 @@ interface MultiplayerStore extends MultiplayerState {
   // Actions
   createTable: (name: string, maxPlayers: number, settings: TableSettings, isPrivate?: boolean, password?: string) => Promise<string>
   joinTable: (tableId: string, playerName: string, password?: string) => Promise<void>
+  joinTableByCode: (tableCode: string, playerName: string, password?: string) => Promise<void>
+  findTableByCode: (tableCode: string) => Promise<GameTable | null>
   leaveTable: () => Promise<void>
   sendChatMessage: (message: string) => Promise<void>
   setConnectionStatus: (status: ConnectionStatus) => void
@@ -152,6 +154,52 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       set({ connectionStatus: 'error' })
       throw error
     }
+  },
+
+  joinTableByCode: async (tableCode: string, playerName: string, password?: string) => {
+    const { service } = get()
+    
+    if (!service) {
+      throw new Error('Multiplayer service not initialized')
+    }
+    
+    try {
+      set({ connectionStatus: 'connecting' })
+      const tableId = await service.joinTableByCode(tableCode, playerName, password)
+      
+      // Subscribe to table and game updates
+      const tableUnsubscribe = service.subscribeToTable(tableId, (table) => {
+        set({ currentTable: table })
+      })
+      
+      const gameUnsubscribe = service.subscribeToGame(tableId, (game) => {
+        set({ currentGame: game })
+      })
+      
+      // Store unsubscribe functions for cleanup
+      service.tableUnsubscribe = tableUnsubscribe
+      service.gameUnsubscribe = gameUnsubscribe
+      
+      set({ 
+        connectionStatus: 'connected',
+        playerName,
+        isHost: false
+      })
+    } catch (error) {
+      console.error('Failed to join table by code:', error)
+      set({ connectionStatus: 'error' })
+      throw error
+    }
+  },
+
+  findTableByCode: async (tableCode: string) => {
+    const { service } = get()
+    
+    if (!service) {
+      throw new Error('Multiplayer service not initialized')
+    }
+    
+    return await service.findTableByCode(tableCode)
   },
 
   leaveTable: async () => {

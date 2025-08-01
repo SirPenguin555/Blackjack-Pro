@@ -5,6 +5,8 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
+  getDocs,
   onSnapshot,
   query,
   where,
@@ -31,6 +33,18 @@ export class MultiplayerService {
   private gameUnsubscribe: Unsubscribe | null = null
 
   /**
+   * Generate a unique 6-character table code
+   */
+  private generateTableCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    let code = ''
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return code
+  }
+
+  /**
    * Create a new game table
    */
   async createTable(
@@ -43,6 +57,8 @@ export class MultiplayerService {
     const user = auth.currentUser
     if (!user) throw new Error('User must be authenticated')
 
+    const tableCode = this.generateTableCode()
+
     const tableData: Omit<GameTable, 'id'> = {
       name,
       hostUserId: user.uid,
@@ -50,6 +66,7 @@ export class MultiplayerService {
       currentPlayers: 0,
       isPrivate,
       password,
+      tableCode,
       status: 'waiting',
       createdAt: Date.now(),
       settings
@@ -57,6 +74,36 @@ export class MultiplayerService {
 
     const docRef = await addDoc(collection(db, 'tables'), tableData)
     return docRef.id
+  }
+
+  /**
+   * Find table by table code
+   */
+  async findTableByCode(tableCode: string): Promise<GameTable | null> {
+    const tablesQuery = query(
+      collection(db, 'tables'),
+      where('tableCode', '==', tableCode.toUpperCase()),
+      where('status', '==', 'waiting')
+    )
+    
+    const snapshot = await getDocs(tablesQuery)
+    if (snapshot.empty) return null
+    
+    const doc = snapshot.docs[0]
+    return { id: doc.id, ...doc.data() } as GameTable
+  }
+
+  /**
+   * Join table by code
+   */
+  async joinTableByCode(tableCode: string, playerName: string, password?: string): Promise<string> {
+    const table = await this.findTableByCode(tableCode)
+    if (!table) {
+      throw new Error('Table not found with code: ' + tableCode)
+    }
+    
+    await this.joinTable(table.id, playerName, password)
+    return table.id
   }
 
   /**
@@ -70,7 +117,15 @@ export class MultiplayerService {
     const gameRef = doc(db, 'games', tableId)
 
     // Verify password if table is private
-    // TODO: Add password verification logic
+    const tableSnap = await getDoc(tableRef)
+    if (!tableSnap.exists()) {
+      throw new Error('Table not found')
+    }
+    
+    const tableData = tableSnap.data() as GameTable
+    if (tableData.isPrivate && tableData.password !== password) {
+      throw new Error('Invalid password for private table')
+    }
 
     // Add player to game
     const playerData: MultiplayerPlayer = {
