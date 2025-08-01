@@ -25,6 +25,8 @@ export function ResetConfirmation({ onConfirm, onCancel }: ResetConfirmationProp
                 <li>• Your chip balance back to $250</li>
                 <li>• All achievements and progress</li>
                 <li>• Current game progress</li>
+                <li>• Active bankroll challenges (will be abandoned)</li>
+                <li>• Active tournaments (will leave tournament)</li>
               </ul>
             </div>
           </div>

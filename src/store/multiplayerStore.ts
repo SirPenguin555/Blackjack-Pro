@@ -38,12 +38,30 @@ interface MultiplayerStore extends MultiplayerState {
 }
 
 const defaultTableSettings: TableSettings = {
+  // Betting limits
   minBet: 5,
   maxBet: 500,
   startingChips: 1000,
+  
+  // Game variant rules
+  gameVariant: 'vegas',
   dealerStandsOn17: true,
   doubleAfterSplit: true,
-  surrenderAllowed: false
+  surrenderAllowed: false,
+  insuranceAllowed: true,
+  blackjackPayout: 1.5, // 3:2
+  maxSplits: 3,
+  doubleOnAnyTwoCards: true,
+  doubleAfterSplitAces: false,
+  
+  // Table experience
+  dealerSpeed: 'normal',
+  showStrategyHints: false,
+  allowSpectators: true,
+  
+  // Time limits
+  playerActionTimeLimit: 30, // 30 seconds
+  maxGameDuration: 0 // No limit
 }
 
 export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({

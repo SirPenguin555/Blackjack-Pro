@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { GameMode } from '@/types/game'
 import { TableLevel, getTableConfiguration } from '@/lib/tableSystem'
 import { GameVariant, RULE_CONFIGURATIONS } from '@/lib/ruleVariations'
@@ -14,6 +14,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
   const [showTableSelector, setShowTableSelector] = useState(false)
   const [showVariantSelector, setShowVariantSelector] = useState(false)
   const [showTutorialDropdown, setShowTutorialDropdown] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
   
   const { 
     currentTableLevel, 
@@ -28,6 +29,13 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
   const currentPlayer = players[0]
   const currentTableConfig = getTableConfiguration(currentTableLevel)
   const currentVariantConfig = RULE_CONFIGURATIONS[currentGameVariant]
+  
+  // Prevent hydration mismatch by ensuring client-side rendering
+  useEffect(() => {
+    if (currentTableLevel && currentGameVariant) {
+      setIsHydrated(true)
+    }
+  }, [currentTableLevel, currentGameVariant])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900 flex items-center justify-center p-4">
@@ -140,6 +148,30 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
           </button>
 
           <button
+            onClick={() => onModeSelect('challenges')}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+          >
+            <div className="text-xl">🎯 Bankroll Challenges</div>
+            <div className="text-sm opacity-90">Special betting scenarios & rewards</div>
+          </button>
+
+          <button
+            onClick={() => onModeSelect('tournaments')}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+          >
+            <div className="text-xl">🏆 Tournaments</div>
+            <div className="text-sm opacity-90">Compete in organized competitions</div>
+          </button>
+
+          <button
+            onClick={() => onModeSelect('dealer')}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+          >
+            <div className="text-xl">🎲 Dealer Mode</div>
+            <div className="text-sm opacity-90">Play as the house with AI players</div>
+          </button>
+
+          <button
             onClick={() => onModeSelect('stats')}
             className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
@@ -179,7 +211,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
                 className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded transition-colors duration-200 text-sm"
               >
                 <div className="flex justify-between items-center">
-                  <span>🎯 Table: {currentTableConfig.name}</span>
+                  <span>🎯 Table: {isHydrated ? currentTableConfig.name : 'Loading...'}</span>
                   <span className="text-xs opacity-75">Change</span>
                 </div>
               </button>
@@ -189,7 +221,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
                 className="w-full bg-purple-700 hover:bg-purple-800 text-white font-medium py-2 px-4 rounded transition-colors duration-200 text-sm"
               >
                 <div className="flex justify-between items-center">
-                  <span>🃏 Rules: {currentVariantConfig.name}</span>
+                  <span>🃏 Rules: {isHydrated ? currentVariantConfig.name : 'Loading...'}</span>
                   <span className="text-xs opacity-75">Change</span>
                 </div>
               </button>
@@ -225,7 +257,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
       </div>
 
       {/* Table Selector Modal */}
-      {showTableSelector && (
+      {showTableSelector && isHydrated && (
         <TableSelector
           currentLevel={currentTableLevel}
           playerChips={currentPlayer?.chips || 0}
@@ -239,7 +271,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
       )}
 
       {/* Variant Selector Modal */}
-      {showVariantSelector && (
+      {showVariantSelector && isHydrated && (
         <VariantSelector
           currentVariant={currentGameVariant}
           onVariantSelect={(variant) => {

@@ -76,6 +76,12 @@ export class PlayerProfileService {
    */
   loadProfile(): PlayerProfile {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.warn('Failed to load player profile, using defaults: localStorage is not available')
+        return this.getDefaultProfile()
+      }
+
       const saved = localStorage.getItem(this.storageKey)
       if (!saved) {
         return this.getDefaultProfile()
@@ -108,6 +114,12 @@ export class PlayerProfileService {
    */
   saveProfile(profile: PlayerProfile): void {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.warn('Failed to save player profile: localStorage is not available')
+        return
+      }
+
       const updatedProfile: PlayerProfile = {
         ...profile,
         lastSaved: new Date().toISOString(),
@@ -268,6 +280,9 @@ export class PlayerProfileService {
    */
   getStorageSize(): number {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return 0
+      }
       const data = localStorage.getItem(this.storageKey)
       return data ? new Blob([data]).size : 0
     } catch {
@@ -280,6 +295,10 @@ export class PlayerProfileService {
    */
   clearProfile(): void {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.warn('Failed to clear profile: localStorage is not available')
+        return
+      }
       localStorage.removeItem(this.storageKey)
     } catch (error) {
       console.warn('Failed to clear profile:', error)

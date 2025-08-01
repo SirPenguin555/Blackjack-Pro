@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useMultiplayerStore } from '@/store/multiplayerStore'
 import { GameTable, TableSettings } from '@/types/multiplayer'
+import { CustomTableSettings } from './CustomTableSettings'
 
 interface MultiplayerLobbyProps {
   onBack: () => void
@@ -22,6 +23,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showJoinForm, setShowJoinForm] = useState(false)
+  const [showCustomSettings, setShowCustomSettings] = useState(false)
   const [selectedTable, setSelectedTable] = useState<GameTable | null>(null)
   const [formData, setFormData] = useState({
     tableName: '',
@@ -31,6 +33,35 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
     isPrivate: false,
     password: ''
   })
+  const [customSettings, setCustomSettings] = useState<TableSettings>({
+    minBet: 5,
+    maxBet: 500,
+    startingChips: 1000,
+    gameVariant: 'vegas',
+    dealerStandsOn17: true,
+    doubleAfterSplit: true,
+    surrenderAllowed: false,
+    insuranceAllowed: true,
+    blackjackPayout: 1.5,
+    maxSplits: 3,
+    doubleOnAnyTwoCards: true,
+    doubleAfterSplitAces: false,
+    dealerSpeed: 'normal',
+    showStrategyHints: false,
+    allowSpectators: true,
+    playerActionTimeLimit: 30,
+    maxGameDuration: 0
+  })
+
+  // Sync form data with custom settings
+  const handleCustomSettingsChange = (newSettings: TableSettings) => {
+    setCustomSettings(newSettings)
+    setFormData(prev => ({
+      ...prev,
+      minBet: newSettings.minBet,
+      maxBet: newSettings.maxBet
+    }))
+  }
   const [tempPlayerName, setTempPlayerName] = useState(playerName)
   const [joinPassword, setJoinPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -66,12 +97,9 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
       setPlayerName(tempPlayerName)
       
       const settings: TableSettings = {
+        ...customSettings,
         minBet: formData.minBet,
-        maxBet: formData.maxBet,
-        startingChips: 1000,
-        dealerStandsOn17: true,
-        doubleAfterSplit: true,
-        surrenderAllowed: false
+        maxBet: formData.maxBet
       }
 
       const tableId = await createTable(
@@ -353,6 +381,19 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                 )}
               </div>
 
+              {/* Custom Settings Button */}
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowCustomSettings(true)}
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
+                >
+                  ⚙️ Advanced Game Rules
+                </button>
+                <p className="text-xs text-gray-500 mt-1">
+                  Customize dealer rules, payouts, and more
+                </p>
+              </div>
+
               <div className="flex gap-4 mt-6">
                 <button
                   onClick={() => setShowCreateForm(false)}
@@ -423,6 +464,16 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Custom Settings Modal */}
+        {showCustomSettings && (
+          <CustomTableSettings
+            settings={customSettings}
+            onSettingsChange={handleCustomSettingsChange}
+            onClose={() => setShowCustomSettings(false)}
+            onSave={() => setShowCustomSettings(false)}
+          />
         )}
       </div>
     </div>

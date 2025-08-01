@@ -521,6 +521,9 @@ export class AudioManager {
 
   private loadPreferences(): void {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return
+      }
       const saved = localStorage.getItem('blackjack-audio-preferences')
       if (saved) {
         const preferences = JSON.parse(saved)
@@ -539,6 +542,9 @@ export class AudioManager {
 
   private savePreferences(): void {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return
+      }
       localStorage.setItem(
         'blackjack-audio-preferences', 
         JSON.stringify(this.preferences)

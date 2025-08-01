@@ -534,14 +534,32 @@ function AchievementsTab({
 
 function ProgressTab() {
   const { currentTableLevel, players, stats } = useGameStore()
+  const [showProgressDashboard, setShowProgressDashboard] = useState(true)
   const currentPlayer = players[0]
+
+  if (!showProgressDashboard) {
+    return (
+      <div className="bg-green-800 bg-opacity-50 rounded-lg p-6">
+        <div className="text-center">
+          <h3 className="text-white text-xl font-bold mb-4">🎯 Progression Dashboard</h3>
+          <p className="text-green-200 mb-4">Track your progress through different table levels and unlock requirements.</p>
+          <button
+            onClick={() => setShowProgressDashboard(true)}
+            className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition-colors"
+          >
+            Open Progress Dashboard
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <ProgressDashboard
       currentLevel={currentTableLevel}
       playerChips={currentPlayer?.chips || 0}
       stats={stats}
-      onClose={() => {}} // No close needed as it's embedded in the tab
+      onClose={() => setShowProgressDashboard(false)}
     />
   )
 }

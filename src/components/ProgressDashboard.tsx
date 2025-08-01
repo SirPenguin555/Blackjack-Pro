@@ -30,15 +30,15 @@ export function ProgressDashboard({
   const currentWinRate = tableUnlockService.calculateWinRate(stats)
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-green-900 bg-opacity-90 flex items-center justify-center p-4 z-50">
       <div className="bg-green-900 rounded-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-white">Progress Dashboard</h2>
           <button
             onClick={onClose}
-            className="text-white hover:text-red-400 text-2xl font-bold"
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
           >
-            ×
+            ← Back
           </button>
         </div>
 

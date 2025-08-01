@@ -48,7 +48,7 @@ export interface GameState {
 
 export type GameAction = 'hit' | 'stand' | 'double' | 'split' | 'surrender' | 'insurance'
 
-export type GameMode = 'menu' | 'normal' | 'tutorial' | 'easy' | 'stats' | 'reset' | 'help' | 'multiplayer' | 'saveload'
+export type GameMode = 'menu' | 'normal' | 'tutorial' | 'easy' | 'stats' | 'reset' | 'help' | 'multiplayer' | 'saveload' | 'challenges' | 'tournaments' | 'dealer'
 
 export interface ChipDenomination {
   value: number
@@ -65,6 +65,7 @@ export interface GameStats {
   blackjacks: number
   totalWinnings: number
   loansTaken: number
+  longestWinStreak: number // Longest consecutive wins for achievements
 }
 
 // Re-export table system types for convenience

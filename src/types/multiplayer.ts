@@ -25,12 +25,30 @@ export interface GameTable {
 }
 
 export interface TableSettings {
+  // Betting limits
   minBet: number
   maxBet: number
   startingChips: number
+  
+  // Game variant rules
+  gameVariant: 'vegas' | 'european' | 'atlantic_city' | 'custom'
   dealerStandsOn17: boolean
   doubleAfterSplit: boolean
   surrenderAllowed: boolean
+  insuranceAllowed: boolean
+  blackjackPayout: number // e.g., 1.5 for 3:2, 1.2 for 6:5
+  maxSplits: number // 0-3
+  doubleOnAnyTwoCards: boolean
+  doubleAfterSplitAces: boolean
+  
+  // Table experience
+  dealerSpeed: 'slow' | 'normal' | 'fast'
+  showStrategyHints: boolean
+  allowSpectators: boolean
+  
+  // Time limits
+  playerActionTimeLimit: number // seconds, 0 = no limit
+  maxGameDuration: number // minutes, 0 = no limit
 }
 
 export interface MultiplayerGameState extends Omit<GameState, 'players'> {

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { GameState, Player, GameAction, ChipDenomination, GameMode, GameStats, TableLevel } from '@/types/game'
+import { GameState, Player, GameAction, ChipDenomination, GameMode, GameStats, TableLevel, Card } from '@/types/game'
 import { TutorialState, TUTORIAL_STEPS, VARIANT_TUTORIAL_STEPS } from '@/types/tutorial'
 import { StrategyAdvice, getBasicStrategyAdvice } from '@/lib/strategy'
 import { createDeck, shuffleDeck, dealCard } from '@/lib/deck'
@@ -8,6 +8,8 @@ import { createRuleSet, GameVariant, RuleSet } from '@/lib/ruleVariations'
 import { statsTracker } from '@/lib/StatsTracker'
 import { achievementEngine, Achievement } from '@/lib/achievementSystem'
 import { playerProfileService } from '@/lib/PlayerProfileService'
+import { ChallengeResult, bankrollChallengeEngine } from '@/lib/bankrollChallenges'
+import { tournamentEngine } from '@/lib/tournamentSystem'
 
 export const CHIP_DENOMINATIONS: ChipDenomination[] = [
   { value: 1, color: 'bg-white border-gray-400 text-black', label: '$1' },
@@ -26,6 +28,7 @@ interface GameStore extends GameState {
   currentTableLevel: TableLevel
   currentGameVariant: GameVariant
   newlyUnlockedAchievements: Achievement[]
+  activeChallengeResult: ChallengeResult | null
   
   // Actions
   setGameMode: (mode: GameMode) => void
@@ -61,6 +64,9 @@ interface GameStore extends GameState {
   // Achievement actions
   checkAchievements: () => void
   clearNewAchievements: () => void
+  
+  // Challenge actions
+  clearChallengeResult: () => void
 }
 
 // Load initial data from player profile
@@ -113,6 +119,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     currentTableLevel: initialProfile.currentTableLevel,
     currentGameVariant: initialProfile.currentGameVariant,
     newlyUnlockedAchievements: [],
+    activeChallengeResult: null,
 
   // Actions
   setGameMode: (mode: GameMode) => {
@@ -197,6 +204,13 @@ export const useGameStore = create<GameStore>((set, get) => {
     const playerIndex = state.players.findIndex(p => p.id === playerId)
     
     if (playerIndex === -1) return
+
+    // Check if bet is allowed by active challenge rules
+    const activeChallenge = bankrollChallengeEngine.getActiveChallenge()
+    if (activeChallenge && !bankrollChallengeEngine.isBetAllowed(activeChallenge.challenge.id, amount)) {
+      // Bet not allowed by challenge rules
+      return
+    }
 
     const updatedPlayers = state.players.map(player => {
       if (player.id === playerId) {
@@ -290,28 +304,47 @@ export const useGameStore = create<GameStore>((set, get) => {
     
     if (playerIndex === -1) return
 
+    // Check if action is allowed by active challenge rules
+    const activeChallenge = bankrollChallengeEngine.getActiveChallenge()
+    if (activeChallenge && !bankrollChallengeEngine.isActionAllowed(activeChallenge.challenge.id, action)) {
+      // Action not allowed by challenge rules
+      return
+    }
+
     const player = updatedPlayers[playerIndex]
 
     // Track strategy decisions if we have advice available
-    if (state.currentStrategyAdvice && state.dealer.cards[1]) {
+    if (state.currentStrategyAdvice) {
       const currentHand = player.hasSplit && !player.isPlayingMainHand && player.splitHand 
         ? player.splitHand 
         : player.hand
       
       const optimalAction = state.currentStrategyAdvice.action
       const isOptimal = action === optimalAction
-      const dealerUpCard = state.dealer.cards[1]
-      const dealerUpValue = dealerUpCard.rank === 'A' ? 11 : 
-                          ['J', 'Q', 'K'].includes(dealerUpCard.rank) ? 10 : 
-                          parseInt(dealerUpCard.rank)
+      
+      // Get dealer up card based on variant
+      let dealerUpCard: Card | undefined
+      if (state.rules?.noHoleCard) {
+        // European variant - dealer only has one visible card
+        dealerUpCard = state.dealer.cards[0]
+      } else {
+        // Vegas/Atlantic City - second card is the up card
+        dealerUpCard = state.dealer.cards[1]
+      }
+      
+      if (dealerUpCard) {
+        const dealerUpValue = dealerUpCard.rank === 'A' ? 11 : 
+                              ['J', 'Q', 'K'].includes(dealerUpCard.rank) ? 10 : 
+                              parseInt(dealerUpCard.rank)
 
-      statsTracker.recordStrategyDecision(
-        action,
-        optimalAction,
-        isOptimal,
-        currentHand.value,
-        dealerUpValue
-      )
+        statsTracker.recordStrategyDecision(
+          action,
+          optimalAction,
+          isOptimal,
+          currentHand.value,
+          dealerUpValue
+        )
+      }
     }
 
     switch (action) {
@@ -361,6 +394,9 @@ export const useGameStore = create<GameStore>((set, get) => {
           // Deduct chips for second bet
           player.chips -= player.bet
           
+          // Increment split count
+          player.splitCount = (player.splitCount || 0) + 1
+          
           // Create split hand from the second card
           const splitCard = player.hand.cards[1]
           player.splitHand = createHand([splitCard])
@@ -380,7 +416,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           
           // Set split flags
           player.hasSplit = true
-          player.canSplit = false
+          player.canSplit = canSplit(player.hand, state.rules, player.splitCount) // Check if can split again
           player.canDouble = canDouble(player.hand) // Can still double on first hand
           player.isPlayingMainHand = true // Start with main hand
           
@@ -508,7 +544,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
   finishRound: () => {
     const state = get()
-    let updatedStats = { ...state.stats }
+    const updatedStats = { ...state.stats }
     
     // Increment rounds played once per round (not per split hand)
     updatedStats.roundsPlayed++
@@ -526,7 +562,6 @@ export const useGameStore = create<GameStore>((set, get) => {
       } else {
         // Calculate payout for main hand (non-surrendered)
         const mainPayout = calculatePayout(player.bet, player.hand, state.dealer, state.rules)
-        const mainWinner = determineWinner(player.hand, state.dealer)
         const mainWinnings = mainPayout - player.bet
         
         totalPayout += mainPayout
@@ -641,6 +676,43 @@ export const useGameStore = create<GameStore>((set, get) => {
       stats: updatedStats,
       phase: 'finished'
     })
+    
+    // Save player progress after each round
+    const mainPlayer = updatedPlayers[0]
+    if (mainPlayer) {
+      playerProfileService.updateChips(mainPlayer.chips)
+      playerProfileService.updateStats(updatedStats)
+      
+      // Update bankroll challenge progress if active
+      const activeChallenge = bankrollChallengeEngine.getActiveChallenge()
+      if (activeChallenge) {
+        const challengeResult = bankrollChallengeEngine.updateChallengeProgress(
+          activeChallenge.challenge.id,
+          mainPlayer.chips,
+          updatedStats.handsPlayed
+        )
+        
+        if (challengeResult) {
+          set({ activeChallengeResult: challengeResult })
+          
+          // Award bonus chips if challenge was successful
+          if (challengeResult.success && challengeResult.reward) {
+            const bonusChips = challengeResult.reward.chips
+            const updatedPlayersWithBonus = updatedPlayers.map((player, index) => {
+              if (index === 0) { // Main player
+                return { ...player, chips: player.chips + bonusChips }
+              }
+              return player
+            })
+            
+            set({ players: updatedPlayersWithBonus })
+            
+            // Update saved chips
+            playerProfileService.updateChips(updatedPlayersWithBonus[0].chips)
+          }
+        }
+      }
+    }
   },
 
   startNewRound: () => {
@@ -708,7 +780,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         handsPushed: 0,
         blackjacks: 0,
         totalWinnings: 0,
-        loansTaken: 0
+        loansTaken: 0,
+        longestWinStreak: 0
       }
     })
   },
@@ -776,6 +849,27 @@ export const useGameStore = create<GameStore>((set, get) => {
   },
 
   resetProgress: () => {
+    // Abandon active bankroll challenge if any
+    const activeChallenge = bankrollChallengeEngine.getActiveChallenge()
+    if (activeChallenge) {
+      bankrollChallengeEngine.abandonChallenge(activeChallenge.challenge.id)
+    }
+    
+    // Abandon active tournament if any
+    const activeTournament = tournamentEngine.getActiveTournament()
+    if (activeTournament) {
+      const mainPlayer = get().players[0]
+      if (mainPlayer) {
+        tournamentEngine.leaveTournament(activeTournament.id, mainPlayer.id)
+      }
+    }
+    
+    // Reset stats tracker
+    statsTracker.resetAllStats()
+    
+    // Reset achievement engine
+    achievementEngine.resetAchievements()
+    
     // Reset stats
     const newStats = {
       handsPlayed: 0,
@@ -785,7 +879,8 @@ export const useGameStore = create<GameStore>((set, get) => {
       handsPushed: 0,
       blackjacks: 0,
       totalWinnings: 0,
-      loansTaken: 0
+      loansTaken: 0,
+      longestWinStreak: 0
     }
     
     // Reset player chips to starting amount
@@ -801,6 +896,9 @@ export const useGameStore = create<GameStore>((set, get) => {
       lastHandWinnings: undefined,
       isPlayingMainHand: undefined
     }))
+    
+    // Reset profile service
+    playerProfileService.resetProfile()
 
     set({
       stats: newStats,
@@ -809,7 +907,10 @@ export const useGameStore = create<GameStore>((set, get) => {
       currentPlayerIndex: 0,
       phase: 'betting',
       round: 1,
-      deck: shuffleDeck(createDeck())
+      deck: shuffleDeck(createDeck()),
+      currentTableLevel: 'beginner',
+      currentGameVariant: 'vegas',
+      rules: createRuleSet('vegas')
     })
   },
 
@@ -865,6 +966,13 @@ export const useGameStore = create<GameStore>((set, get) => {
       stats: updatedStats,
       players: updatedPlayers
     })
+    
+    // Save updated chips and stats
+    const mainPlayer = updatedPlayers[0]
+    if (mainPlayer) {
+      playerProfileService.updateChips(mainPlayer.chips)
+      playerProfileService.updateStats(updatedStats)
+    }
   },
 
   // Strategy actions
@@ -883,8 +991,16 @@ export const useGameStore = create<GameStore>((set, get) => {
       return
     }
 
-    // Get dealer's up card (second card, first is hidden)
-    const dealerUpCard = state.dealer.cards[1]
+    // Get dealer's up card - handle both European (first card) and Vegas/Atlantic City (second card)
+    let dealerUpCard: Card | undefined
+    if (state.rules?.noHoleCard) {
+      // European variant - dealer only has one visible card
+      dealerUpCard = state.dealer.cards[0]
+    } else {
+      // Vegas/Atlantic City - second card is the up card (first is hidden)
+      dealerUpCard = state.dealer.cards[1]
+    }
+    
     if (!dealerUpCard) {
       set({ currentStrategyAdvice: null })
       return
@@ -916,6 +1032,11 @@ export const useGameStore = create<GameStore>((set, get) => {
 
   clearNewAchievements: () => {
     set({ newlyUnlockedAchievements: [] });
+  },
+
+  // Challenge methods
+  clearChallengeResult: () => {
+    set({ activeChallengeResult: null });
   }
   }
-}))
+})

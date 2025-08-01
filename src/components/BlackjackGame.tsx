@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useGameStore, CHIP_DENOMINATIONS } from '@/store/gameStore'
 import { GameAction } from '@/types/game'
 import { Hand } from './Hand'
@@ -20,13 +20,26 @@ import { AudioControls } from './AudioControls'
 import { MultiplayerLobby } from './MultiplayerLobby'
 import { MultiplayerGame } from './MultiplayerGame'
 import { AchievementNotification } from './AchievementNotification'
+import BankrollChallenges from './BankrollChallenges'
+import TournamentLobby from './TournamentLobby'
+import TournamentGame from './TournamentGame'
+import DealerMode from './DealerMode'
 import { useAudio } from '@/hooks/useAudio'
 import { useGameSounds } from '@/hooks/useGameSounds'
 import { useDynamicMusic } from '@/hooks/useDynamicMusic'
+import { useAdaptiveAnimation, useDeviceCapabilities } from '@/hooks/usePerformance'
 import { getSoundService } from '@/lib/audio/SoundService'
+import { Tournament } from '@/lib/tournamentSystem'
 import { useMultiplayerStore } from '@/store/multiplayerStore'
+import { debounce } from '@/lib/performance'
 
 export function BlackjackGame() {
+  const [activeTournament, setActiveTournament] = useState<Tournament | null>(null)
+  
+  // Performance optimization hooks
+  const { shouldReduceMotion, animationClass } = useAdaptiveAnimation()
+  const { isMobile, screenSize } = useDeviceCapabilities()
+  
   const {
     players,
     dealer,
@@ -52,7 +65,9 @@ export function BlackjackGame() {
     updateStrategyAdvice,
     clearStrategyAdvice,
     newlyUnlockedAchievements,
-    clearNewAchievements
+    clearNewAchievements,
+    activeChallengeResult,
+    clearChallengeResult
   } = useGameStore()
 
   const currentPlayer = players[currentPlayerIndex]
@@ -113,23 +128,30 @@ export function BlackjackGame() {
   }, [gameMode, phase, currentPlayerIndex, mainPlayer?.hand, dealer, updateStrategyAdvice, clearStrategyAdvice])
 
 
-  const handleBetChange = (amount: number) => {
-    if (mainPlayer && phase === 'betting') {
-      const oldBet = mainPlayer.bet
-      placeBet(mainPlayer.id, amount)
-      
-      // Play appropriate chip sound based on action
-      if (amount > oldBet) {
-        // Adding chips - play chip stack sound
-        soundService.playChipStack()
-      } else if (amount < oldBet) {
-        // Removing chips - play chip collect sound
-        soundService.playChipCollect()
-      } else if (amount > 0) {
-        // Same amount or initial bet - play chip place sound
-        soundService.playChipPlace()
+  // Debounce bet changes for better performance on mobile
+  const debouncedBetChange = useCallback(
+    debounce((amount: number) => {
+      if (mainPlayer && phase === 'betting') {
+        const oldBet = mainPlayer.bet
+        placeBet(mainPlayer.id, amount)
+        
+        // Play appropriate chip sound based on action (only if not reducing motion)
+        if (!shouldReduceMotion) {
+          if (amount > oldBet) {
+            soundService.playChipStack()
+          } else if (amount < oldBet) {
+            soundService.playChipCollect()
+          } else if (amount > 0) {
+            soundService.playChipPlace()
+          }
+        }
       }
-    }
+    }, isMobile ? 100 : 50),
+    [mainPlayer, phase, placeBet, soundService, shouldReduceMotion, isMobile]
+  )
+
+  const handleBetChange = (amount: number) => {
+    debouncedBetChange(amount)
   }
 
   const handleStartRound = () => {
@@ -256,6 +278,50 @@ export function BlackjackGame() {
     )
   }
 
+  // Show challenges screen if in challenges mode
+  if (gameMode === 'challenges') {
+    return (
+      <BankrollChallenges
+        onClose={() => setGameMode('menu')}
+      />
+    )
+  }
+
+  // Show tournaments screen if in tournaments mode
+  if (gameMode === 'tournaments') {
+    return (
+      <TournamentLobby
+        onBack={() => setGameMode('menu')}
+        onJoinTournament={(tournament) => {
+          setActiveTournament(tournament)
+          setGameMode('normal') // Switch to game mode for tournament play
+        }}
+      />
+    )
+  }
+
+  // Show tournament game if there's an active tournament
+  if (activeTournament) {
+    return (
+      <TournamentGame
+        tournament={activeTournament}
+        onExit={() => {
+          setActiveTournament(null)
+          setGameMode('menu')
+        }}
+      />
+    )
+  }
+
+  // Show dealer mode if in dealer mode
+  if (gameMode === 'dealer') {
+    return (
+      <DealerMode
+        onExit={() => setGameMode('menu')}
+      />
+    )
+  }
+
   // Show multiplayer lobby if in multiplayer mode
   if (gameMode === 'multiplayer') {
     // If we're in an active multiplayer game, show the game
@@ -344,16 +410,18 @@ export function BlackjackGame() {
         {/* Game Area */}
         <div className="bg-green-700 rounded-lg p-3 sm:p-6 shadow-xl">
           {/* Dealer Section */}
-          <div className={`mb-6 sm:mb-8 rounded-lg p-2 ${getHighlightClass('dealer')}`}>
+          <div className={`mb-6 sm:mb-8 rounded-lg p-2 ${animationClass} ${getHighlightClass('dealer')}`}>
             <Hand 
               hand={dealer} 
               label="Dealer" 
               className="justify-center"
+              isDealing={phase === 'dealing' && !shouldReduceMotion}
+              dealingSpeed={isMobile ? 300 : 500}
             />
           </div>
 
           {/* Player Section */}
-          <div className={`mb-6 sm:mb-8 rounded-lg p-2 ${getHighlightClass('player')}`}>
+          <div className={`mb-6 sm:mb-8 rounded-lg p-2 ${animationClass} ${getHighlightClass('player')}`}>
             <SplitHand 
               mainHand={mainPlayer.hand} 
               splitHand={mainPlayer.splitHand}
@@ -367,12 +435,13 @@ export function BlackjackGame() {
           <div className="flex flex-col items-center space-y-6">
             {phase === 'betting' && (
               <div className="space-y-4">
-                <div className={`rounded-lg p-2 ${getHighlightClass('chips')}`}>
+                <div className={`rounded-lg p-2 ${animationClass} ${getHighlightClass('chips')}`}>
                   <ChipSelector
                     denominations={CHIP_DENOMINATIONS}
                     selectedBet={mainPlayer.bet}
                     onBetChange={handleBetChange}
                     maxBet={mainPlayer.chips}
+                    isWinning={phase === 'finished' && mainPlayer.lastHandWinnings !== undefined && mainPlayer.lastHandWinnings > 0}
                   />
                 </div>
                 <div className={`text-center ${getHighlightClass('cards')}`}>
@@ -464,6 +533,54 @@ export function BlackjackGame() {
           achievements={newlyUnlockedAchievements}
           onClose={clearNewAchievements}
         />
+      )}
+
+      {/* Challenge Result Notification */}
+      {activeChallengeResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`bg-white rounded-lg shadow-xl max-w-md w-full ${activeChallengeResult.success ? 'border-4 border-green-500' : 'border-4 border-red-500'}`}>
+            <div className={`p-6 rounded-t-lg ${activeChallengeResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
+              <div className="text-center">
+                <div className={`text-6xl mb-4 ${activeChallengeResult.success ? 'text-green-500' : 'text-red-500'}`}>
+                  {activeChallengeResult.success ? '🎉' : '💥'}
+                </div>
+                <h2 className={`text-2xl font-bold mb-2 ${activeChallengeResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                  Challenge {activeChallengeResult.success ? 'Completed!' : 'Failed'}
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  Final Amount: <span className="font-bold">${activeChallengeResult.finalAmount}</span>
+                </p>
+                {activeChallengeResult.timeUsed && (
+                  <p className="text-gray-600 mb-4">
+                    Time Used: <span className="font-bold">{activeChallengeResult.timeUsed.toFixed(1)} minutes</span>
+                  </p>
+                )}
+                <p className="text-gray-600 mb-4">
+                  Hands Played: <span className="font-bold">{activeChallengeResult.handsPlayed}</span>
+                </p>
+                {activeChallengeResult.success && activeChallengeResult.reward && (
+                  <div className="bg-green-100 border border-green-200 rounded-lg p-4 mb-4">
+                    <h3 className="font-bold text-green-800 mb-2">Rewards Earned:</h3>
+                    <p className="text-green-700">💰 ${activeChallengeResult.reward.chips} bonus chips</p>
+                    {activeChallengeResult.reward.achievement && (
+                      <p className="text-green-700">🏆 &quot;{activeChallengeResult.reward.achievement}&quot; achievement</p>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={clearChallengeResult}
+                  className={`px-6 py-3 rounded-lg font-bold text-white ${
+                    activeChallengeResult.success 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

@@ -13,14 +13,14 @@ export function BankruptcyScreen({ onReset, onLoan }: BankruptcyScreenProps) {
           <div className="text-center mb-6">
             <div className="text-6xl mb-4">💸</div>
             <h2 className="text-3xl font-bold text-white mb-2">Bankrupt!</h2>
-            <p className="text-red-200">You're out of chips</p>
+            <p className="text-red-200">You&apos;re out of chips</p>
           </div>
 
           {/* Message */}
           <div className="bg-red-900 bg-opacity-50 rounded-lg p-4 mb-6">
             <div className="text-white text-center">
-              <p className="mb-2">Don't worry, it happens to the best of us!</p>
-              <p className="text-sm text-red-200">Choose how you'd like to continue:</p>
+              <p className="mb-2">Don&apos;t worry, it happens to the best of us!</p>
+              <p className="text-sm text-red-200">Choose how you&apos;d like to continue:</p>
             </div>
           </div>
 
