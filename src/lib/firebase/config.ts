@@ -22,25 +22,21 @@ const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 export const auth = getAuth(app)
 
-// Connect to emulators in development or demo mode
-if (typeof window !== 'undefined') {
-  const shouldUseEmulators = process.env.NODE_ENV === 'development' || isDemoMode
-  
-  if (shouldUseEmulators) {
-    try {
-      // Only connect if not already connected
-      if (!auth.config.emulator) {
-        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true })
-        console.log('Connected to Firebase Auth emulator')
-      }
-      // @ts-expect-error - private property but needed for emulator check
-      if (!db._delegate._databaseId.projectId.includes('localhost')) {
-        connectFirestoreEmulator(db, 'localhost', 8080)
-        console.log('Connected to Firebase Firestore emulator')
-      }
-    } catch (error) {
-      console.warn('Could not connect to Firebase emulators (this is expected if not running locally):', error)
+// Connect to emulators only in development AND if no real Firebase config
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development' && isDemoMode) {
+  try {
+    // Only connect if not already connected
+    if (!auth.config.emulator) {
+      connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true })
+      console.log('Connected to Firebase Auth emulator')
     }
+    // @ts-expect-error - private property but needed for emulator check
+    if (!db._delegate._databaseId.projectId.includes('localhost')) {
+      connectFirestoreEmulator(db, 'localhost', 8080)
+      console.log('Connected to Firebase Firestore emulator')
+    }
+  } catch (error) {
+    console.warn('Could not connect to Firebase emulators:', error)
   }
 }
 
