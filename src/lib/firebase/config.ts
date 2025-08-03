@@ -26,14 +26,26 @@ if (typeof window !== 'undefined') {
 }
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig)
+let app: any
+let db: any
+let auth: any
 
-// Initialize Firebase services
-export const db = getFirestore(app)
-export const auth = getAuth(app)
+try {
+  app = initializeApp(firebaseConfig)
+  db = getFirestore(app)
+  auth = getAuth(app)
+} catch (error) {
+  console.error('Failed to initialize Firebase:', error)
+  // Create mock services for development when Firebase fails
+  app = null
+  db = null
+  auth = null
+}
+
+export { db, auth }
 
 // Connect to emulators in development or demo mode
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && auth && db) {
   const shouldUseEmulators = process.env.NODE_ENV === 'development' && isDemoMode
   
   if (shouldUseEmulators) {
@@ -58,6 +70,24 @@ if (typeof window !== 'undefined') {
 
 // Ensure user is authenticated (sign in anonymously if needed)
 export async function ensureAuthenticated() {
+  // If Firebase auth is not available, create a mock user
+  if (!auth) {
+    console.warn('Firebase auth not available. Creating mock user for development.')
+    return {
+      uid: 'mock-user-' + Math.random().toString(36).substring(7),
+      displayName: 'Mock User',
+      isAnonymous: true,
+      email: null,
+      emailVerified: false,
+      photoURL: null,
+      providerData: [],
+      metadata: {
+        creationTime: new Date().toISOString(),
+        lastSignInTime: new Date().toISOString()
+      }
+    } as any
+  }
+
   if (auth.currentUser) {
     return auth.currentUser
   }
@@ -80,9 +110,11 @@ export async function ensureAuthenticated() {
     console.error('Failed to authenticate:', error)
     
     // Handle specific Firebase auth errors
-    if (error.code === 'auth/admin-restricted-operation') {
-      console.warn('Anonymous authentication is disabled in Firebase. Creating mock user for development.')
-      // Return a mock user object for development when anonymous auth is disabled
+    if (error.code === 'auth/admin-restricted-operation' || 
+        error.code === 'auth/api-key-not-valid' ||
+        error.message?.includes('api-key-not-valid')) {
+      console.warn('Firebase authentication not available. Creating mock user for development.')
+      // Return a mock user object for development when Firebase auth is not available
       return {
         uid: 'mock-user-' + Math.random().toString(36).substring(7),
         displayName: 'Anonymous Player',

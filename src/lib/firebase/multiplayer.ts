@@ -55,8 +55,8 @@ export class MultiplayerService {
     isPrivate: boolean = false,
     password?: string
   ): Promise<string> {
-    if (isDemoMode) {
-      console.warn('Demo mode: Creating mock table')
+    if (isDemoMode || !db) {
+      console.warn('Demo mode or Firebase unavailable: Creating mock table')
       const mockTableId = 'demo-table-' + Math.random().toString(36).substring(7)
       // In demo mode, just return a mock table ID
       setTimeout(() => {
