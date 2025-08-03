@@ -3,17 +3,16 @@ import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth'
 
 // Check if we're in demo mode (no real Firebase config)
-const isDemoMode = !process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 
-  process.env.NEXT_PUBLIC_FIREBASE_API_KEY.includes('Demo')
+const isDemoMode = process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.includes('Demo') || false
 
 const firebaseConfig = {
-  // Use real Firebase config from environment variables, or demo values for development
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDemo-Key-For-Local-Development-Only",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "demo-project.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "demo-project",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "demo-project.appspot.com",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef123456"
+  // Use real Firebase config from environment variables, or production values as fallback
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyBWAK1PJIX9J6xNRpNPGu5ZJc0bpBvzDsQ",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "blackjack-pro-555.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "blackjack-pro-555",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "blackjack-pro-555.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "5499124659",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:5499124659:web:963654c8101c65a68aa9c6"
 }
 
 // Log configuration status for debugging
@@ -21,7 +20,9 @@ if (typeof window !== 'undefined') {
   console.log('Firebase Config Status:', {
     isDemoMode,
     projectId: firebaseConfig.projectId,
-    hasApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+    apiKey: firebaseConfig.apiKey.substring(0, 20) + '...',
+    hasEnvApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    environment: process.env.NODE_ENV
   })
 }
 
