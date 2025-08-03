@@ -28,6 +28,8 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
   const [showJoinByCodeForm, setShowJoinByCodeForm] = useState(false)
   const [showCustomSettings, setShowCustomSettings] = useState(false)
   const [selectedTable, setSelectedTable] = useState<GameTable | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [formData, setFormData] = useState({
     tableName: '',
     maxPlayers: 4,
@@ -77,7 +79,6 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
   useEffect(() => {
     setJoinByCodeData(prev => ({ ...prev, playerName: tempPlayerName }))
   }, [tempPlayerName])
-  const [isLoading, setIsLoading] = useState(false)
 
   // Initialize authentication for demo purposes
   useEffect(() => {
@@ -95,6 +96,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
         console.error('Failed to initialize Firebase:', error)
         // Set connection status to error so user sees appropriate message
         setConnectionStatus('error')
+        setErrorMessage(error instanceof Error ? error.message : 'Failed to initialize multiplayer features')
       }
     }
     
@@ -127,7 +129,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
       // The component will automatically update when the store state changes
     } catch (error) {
       console.error('Failed to create table:', error)
-      alert('Failed to create table. Please try again.')
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to create table. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -149,7 +151,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
       console.log('Joined table:', selectedTable.id)
     } catch (error) {
       console.error('Failed to join table:', error)
-      alert('Failed to join table. Please try again.')
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to join table. Please try again.')
     } finally {
       setIsLoading(false)
       setShowJoinForm(false)
@@ -174,7 +176,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
       console.log('Joined table by code:', joinByCodeData.tableCode)
     } catch (error) {
       console.error('Failed to join table by code:', error)
-      alert(error instanceof Error ? error.message : 'Failed to join table. Please check the code and try again.')
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to join table. Please check the code and try again.')
     } finally {
       setIsLoading(false)
       setShowJoinByCodeForm(false)
@@ -210,6 +212,25 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
               <p className="text-gray-700">
                 <strong>Multiplayer features require Firebase setup.</strong>
               </p>
+              
+              {errorMessage && (
+                <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                  <p className="text-sm text-red-800">
+                    <strong>Error:</strong> {errorMessage}
+                  </p>
+                  {errorMessage.includes('Anonymous authentication is disabled') && (
+                    <div className="mt-2 text-sm text-red-700">
+                      <p><strong>To fix this:</strong></p>
+                      <ol className="list-decimal list-inside mt-1 space-y-1">
+                        <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="underline">Firebase Console</a></li>
+                        <li>Select your project → Authentication → Sign-in method</li>
+                        <li>Enable "Anonymous" authentication</li>
+                        <li>Save and refresh this page</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              )}
               
               <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
                 <p className="text-sm text-blue-800">
@@ -256,6 +277,28 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
             Back to Menu
           </button>
         </div>
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{errorMessage}</span>
+            <button 
+              onClick={() => setErrorMessage('')}
+              className="float-right text-red-500 hover:text-red-700"
+            >
+              ×
+            </button>
+            {errorMessage.includes('Anonymous authentication is disabled') && (
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-sm text-yellow-800 font-semibold">Quick Fix:</p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Enable Anonymous authentication in your Firebase Console → Authentication → Sign-in method
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Player Name Input */}
         <div className="bg-white rounded-lg p-4 mb-6">

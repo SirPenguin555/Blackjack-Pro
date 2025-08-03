@@ -18,7 +18,7 @@ import {
   DocumentReference,
   Unsubscribe
 } from 'firebase/firestore'
-import { db, auth } from './config'
+import { db, auth, ensureAuthenticated, isDemoMode } from './config'
 import { 
   GameTable, 
   MultiplayerGameState, 
@@ -29,8 +29,9 @@ import {
 } from '@/types/multiplayer'
 
 export class MultiplayerService {
-  private tableUnsubscribe: Unsubscribe | null = null
-  private gameUnsubscribe: Unsubscribe | null = null
+  public tableUnsubscribe: Unsubscribe | null = null
+  public gameUnsubscribe: Unsubscribe | null = null
+  public tablesUnsubscribe: Unsubscribe | null = null
 
   /**
    * Generate a unique 6-character table code
@@ -54,8 +55,24 @@ export class MultiplayerService {
     isPrivate: boolean = false,
     password?: string
   ): Promise<string> {
-    const user = auth.currentUser
-    if (!user) throw new Error('User must be authenticated')
+    if (isDemoMode) {
+      console.warn('Demo mode: Creating mock table')
+      const mockTableId = 'demo-table-' + Math.random().toString(36).substring(7)
+      // In demo mode, just return a mock table ID
+      setTimeout(() => {
+        console.log('Demo table created:', mockTableId)
+      }, 1000)
+      return mockTableId
+    }
+    
+    const user = await ensureAuthenticated()
+    
+    // Check if we're using a mock user (when anonymous auth is disabled)
+    if (user.uid.startsWith('mock-user-') || user.uid.startsWith('demo-user-')) {
+      console.warn('Using mock authentication - multiplayer features limited')
+      const mockTableId = 'mock-table-' + Math.random().toString(36).substring(7)
+      return mockTableId
+    }
 
     const tableCode = this.generateTableCode()
 
@@ -80,6 +97,11 @@ export class MultiplayerService {
    * Find table by table code
    */
   async findTableByCode(tableCode: string): Promise<GameTable | null> {
+    if (isDemoMode) {
+      console.warn('Demo mode: Mock table search')
+      return null
+    }
+    
     const tablesQuery = query(
       collection(db, 'tables'),
       where('tableCode', '==', tableCode.toUpperCase()),
@@ -110,8 +132,18 @@ export class MultiplayerService {
    * Join an existing table
    */
   async joinTable(tableId: string, playerName: string, password?: string): Promise<void> {
-    const user = auth.currentUser
-    if (!user) throw new Error('User must be authenticated')
+    if (isDemoMode) {
+      console.warn('Demo mode: Mock joining table')
+      return
+    }
+    
+    const user = await ensureAuthenticated()
+    
+    // Check if we're using a mock user (when anonymous auth is disabled)
+    if (user.uid.startsWith('mock-user-') || user.uid.startsWith('demo-user-')) {
+      console.warn('Using mock authentication - cannot join real tables')
+      throw new Error('Anonymous authentication is disabled. Please enable it in Firebase Console or sign in with a real account.')
+    }
 
     const tableRef = doc(db, 'tables', tableId)
     const gameRef = doc(db, 'games', tableId)
@@ -163,8 +195,7 @@ export class MultiplayerService {
    * Leave a table
    */
   async leaveTable(tableId: string): Promise<void> {
-    const user = auth.currentUser
-    if (!user) throw new Error('User must be authenticated')
+    const user = await ensureAuthenticated()
 
     const tableRef = doc(db, 'tables', tableId)
     const gameRef = doc(db, 'games', tableId)
@@ -185,8 +216,7 @@ export class MultiplayerService {
    * Send a chat message
    */
   async sendChatMessage(tableId: string, message: string): Promise<void> {
-    const user = auth.currentUser
-    if (!user) throw new Error('User must be authenticated')
+    const user = await ensureAuthenticated()
 
     const chatMessage: Omit<ChatMessage, 'id'> = {
       userId: user.uid,
@@ -206,8 +236,7 @@ export class MultiplayerService {
    * Make a player action (hit, stand, etc.)
    */
   async makePlayerAction(tableId: string, action: PlayerAction): Promise<void> {
-    const user = auth.currentUser
-    if (!user) throw new Error('User must be authenticated')
+    const user = await ensureAuthenticated()
 
     const gameRef = doc(db, 'games', tableId)
     await updateDoc(gameRef, {
@@ -274,8 +303,7 @@ export class MultiplayerService {
    * Initialize a new game for a table
    */
   async initializeGame(tableId: string, settings: TableSettings): Promise<void> {
-    const user = auth.currentUser
-    if (!user) throw new Error('User must be authenticated')
+    const user = await ensureAuthenticated()
 
     const initialGameState: MultiplayerGameState = {
       tableId,
@@ -310,6 +338,10 @@ export class MultiplayerService {
     if (this.gameUnsubscribe) {
       this.gameUnsubscribe()
       this.gameUnsubscribe = null
+    }
+    if (this.tablesUnsubscribe) {
+      this.tablesUnsubscribe()
+      this.tablesUnsubscribe = null
     }
   }
 }

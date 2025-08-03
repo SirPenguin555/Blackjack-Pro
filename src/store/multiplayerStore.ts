@@ -9,12 +9,13 @@ import {
 } from '@/types/multiplayer'
 import { GameAction } from '@/types/game'
 import { MultiplayerGameEngine } from '@/lib/multiplayerGameEngine'
+import { MultiplayerService } from '@/lib/firebase/multiplayer'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 
 interface MultiplayerStore extends MultiplayerState {
   // Service instance
-  service: MultiplayerService
+  service: MultiplayerService | null
 
   // Actions
   createTable: (name: string, maxPlayers: number, settings: TableSettings, isPrivate?: boolean, password?: string) => Promise<string>
@@ -349,7 +350,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       set({ connectionStatus: 'connecting' })
       
       // Dynamically import Firebase and services
-      const { auth } = await import('@/lib/firebase/config')
+      const { auth, ensureAuthenticated } = await import('@/lib/firebase/config')
       const { MultiplayerService } = await import('@/lib/firebase/multiplayer')
       
       // Initialize service
@@ -357,30 +358,41 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       set({ service })
       
       // Set up auth state listener
-      auth.onAuthStateChanged((user) => {
+      auth.onAuthStateChanged(async (user) => {
         if (user) {
           set({ 
             userId: user.uid,
-            playerName: user.displayName || 'Player',
+            playerName: user.displayName || `Player_${user.uid.slice(0, 6)}`,
             connectionStatus: 'connected'
           })
+          
+          // Subscribe to available tables
+          try {
+            const unsubscribe = service.subscribeToAvailableTables((tables) => {
+              set({ availableTables: tables })
+            })
+            // Store unsubscribe function for cleanup
+            service.tablesUnsubscribe = unsubscribe
+          } catch (error) {
+            console.warn('Failed to subscribe to available tables:', error)
+          }
         } else {
-          set({ 
-            userId: '',
-            playerName: '',
-            connectionStatus: 'disconnected',
-            currentTable: null,
-            currentGame: null
-          })
+          // Try to sign in anonymously for multiplayer features
+          try {
+            await ensureAuthenticated()
+          } catch (error) {
+            console.warn('Failed to authenticate anonymously:', error)
+            set({ 
+              userId: '',
+              playerName: '',
+              connectionStatus: 'disconnected',
+              currentTable: null,
+              currentGame: null
+            })
+          }
         }
       })
-
-      // Subscribe to available tables (if service supports it)
-      if (service.subscribeToAvailableTables) {
-        service.subscribeToAvailableTables((tables) => {
-          set({ availableTables: tables })
-        })
-      }
+      
     } catch (error) {
       console.error('Failed to initialize multiplayer:', error)
       set({ connectionStatus: 'error' })

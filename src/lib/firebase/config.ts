@@ -1,9 +1,10 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
-import { getAuth, connectAuthEmulator } from 'firebase/auth'
+import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth'
 
 // Check if we're in demo mode (no real Firebase config)
-const isDemoMode = !process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+const isDemoMode = !process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 
+  process.env.NEXT_PUBLIC_FIREBASE_API_KEY.includes('Demo')
 
 const firebaseConfig = {
   // Use real Firebase config from environment variables, or demo values for development
@@ -15,6 +16,15 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef123456"
 }
 
+// Log configuration status for debugging
+if (typeof window !== 'undefined') {
+  console.log('Firebase Config Status:', {
+    isDemoMode,
+    projectId: firebaseConfig.projectId,
+    hasApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+  })
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
 
@@ -24,7 +34,7 @@ export const auth = getAuth(app)
 
 // Connect to emulators in development or demo mode
 if (typeof window !== 'undefined') {
-  const shouldUseEmulators = process.env.NODE_ENV === 'development' || isDemoMode
+  const shouldUseEmulators = process.env.NODE_ENV === 'development' && isDemoMode
   
   if (shouldUseEmulators) {
     try {
@@ -39,8 +49,56 @@ if (typeof window !== 'undefined') {
         console.log('Connected to Firebase Firestore emulator')
       }
     } catch (error) {
-      console.warn('Could not connect to Firebase emulators (this is expected if not running locally):', error)
+      console.warn('Could not connect to Firebase emulators:', error)
     }
+  } else if (!isDemoMode) {
+    console.log('Using production Firebase configuration')
+  }
+}
+
+// Ensure user is authenticated (sign in anonymously if needed)
+export async function ensureAuthenticated() {
+  if (auth.currentUser) {
+    return auth.currentUser
+  }
+  
+  if (isDemoMode) {
+    console.warn('Demo mode: Multiplayer features may not work properly')
+    // In demo mode, create a mock user for development
+    return {
+      uid: 'demo-user-' + Math.random().toString(36).substring(7),
+      displayName: 'Demo User',
+      isAnonymous: true
+    } as any
+  }
+  
+  try {
+    const result = await signInAnonymously(auth)
+    console.log('Authenticated anonymously for multiplayer features')
+    return result.user
+  } catch (error: any) {
+    console.error('Failed to authenticate:', error)
+    
+    // Handle specific Firebase auth errors
+    if (error.code === 'auth/admin-restricted-operation') {
+      console.warn('Anonymous authentication is disabled in Firebase. Creating mock user for development.')
+      // Return a mock user object for development when anonymous auth is disabled
+      return {
+        uid: 'mock-user-' + Math.random().toString(36).substring(7),
+        displayName: 'Anonymous Player',
+        isAnonymous: true,
+        email: null,
+        emailVerified: false,
+        photoURL: null,
+        providerData: [],
+        metadata: {
+          creationTime: new Date().toISOString(),
+          lastSignInTime: new Date().toISOString()
+        }
+      } as any
+    }
+    
+    throw new Error(`Authentication failed: ${error.message || 'Please check your internet connection and Firebase configuration.'}`)
   }
 }
 
