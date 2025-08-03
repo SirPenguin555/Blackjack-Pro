@@ -113,7 +113,7 @@ export default function DealerMode({ onExit }: DealerModeProps) {
 
   const dealInitialCards = () => {
     let currentDeck = [...deck]
-    let updatedPlayers = [...aiPlayers]
+    const updatedPlayers = [...aiPlayers]
     let newDealerHand = createHand()
 
     // Deal first card to each player

@@ -57,5 +57,5 @@ global.AudioContext = class MockAudioContext {
   }
 }
 
-// @ts-ignore
+// @ts-expect-error - Setting global for test environment
 global.webkitAudioContext = global.AudioContext

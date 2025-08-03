@@ -13,6 +13,7 @@ import { format, startOfDay, isToday, subDays } from 'date-fns'
 import { TableLevel } from './tableSystem'
 import { GameVariant } from './ruleVariations'
 import { GameStats, GameAction } from '../types/game'
+import { safeLocalStorage } from './utils/storage'
 
 export interface AdvancedGameStats extends GameStats {
   // Extended statistics
@@ -565,7 +566,7 @@ export class StatsTracker {
   // Persistence
   private saveStats(): void {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.stats))
+      safeLocalStorage.setItem(this.storageKey, JSON.stringify(this.stats))
     } catch (error) {
       console.error('Failed to save statistics to localStorage:', error)
     }
@@ -573,7 +574,7 @@ export class StatsTracker {
 
   private loadStats(): StoredStatistics {
     try {
-      const saved = localStorage.getItem(this.storageKey)
+      const saved = safeLocalStorage.getItem(this.storageKey)
       if (saved) {
         const parsed = JSON.parse(saved)
         return {

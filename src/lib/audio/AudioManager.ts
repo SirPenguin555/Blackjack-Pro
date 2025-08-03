@@ -6,6 +6,7 @@ import {
   AudioState, 
   AudioManagerEvents 
 } from './types'
+import { safeLocalStorage } from '../utils/storage'
 
 export class AudioManager {
   private audioContext: AudioContext | null = null
@@ -524,7 +525,7 @@ export class AudioManager {
       if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
         return
       }
-      const saved = localStorage.getItem('blackjack-audio-preferences')
+      const saved = safeLocalStorage.getItem('blackjack-audio-preferences')
       if (saved) {
         const preferences = JSON.parse(saved)
         this.preferences = {
@@ -545,7 +546,7 @@ export class AudioManager {
       if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
         return
       }
-      localStorage.setItem(
+      safeLocalStorage.setItem(
         'blackjack-audio-preferences', 
         JSON.stringify(this.preferences)
       )

@@ -1,3 +1,6 @@
+import type { GameStats } from '../types/game'
+import { safeLocalStorage } from './utils/storage'
+
 export interface BankrollChallenge {
   id: string
   name: string
@@ -181,7 +184,7 @@ export class BankrollChallengeEngine {
 
   private loadProgress() {
     try {
-      const saved = localStorage.getItem('bankroll-challenge-progress')
+      const saved = safeLocalStorage.getItem('bankroll-challenge-progress')
       if (saved) {
         const data = JSON.parse(saved)
         Object.entries(data).forEach(([id, progress]) => {
@@ -199,13 +202,13 @@ export class BankrollChallengeEngine {
       this.progress.forEach((progress, id) => {
         data[id] = progress
       })
-      localStorage.setItem('bankroll-challenge-progress', JSON.stringify(data))
+      safeLocalStorage.setItem('bankroll-challenge-progress', JSON.stringify(data))
     } catch (error) {
       console.warn('Failed to save challenge progress:', error)
     }
   }
 
-  getAvailableChallenges(playerStats: any): BankrollChallenge[] {
+  getAvailableChallenges(playerStats: GameStats): BankrollChallenge[] {
     return BANKROLL_CHALLENGES.filter(challenge => 
       this.isChallengeUnlocked(challenge, playerStats)
     )
@@ -215,7 +218,7 @@ export class BankrollChallengeEngine {
     return [...BANKROLL_CHALLENGES]
   }
 
-  private isChallengeUnlocked(challenge: BankrollChallenge, playerStats: any): boolean {
+  private isChallengeUnlocked(challenge: BankrollChallenge, playerStats: GameStats): boolean {
     const req = challenge.unlockRequirement
     
     switch (req.type) {

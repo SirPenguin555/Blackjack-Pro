@@ -77,7 +77,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   playerName: '',
   
   // Service instance (initialized lazily)
-  service: null as any,
+  service: null as MultiplayerService | null,
 
   // Actions
   createTable: async (name: string, maxPlayers: number, settings: TableSettings, isPrivate = false, password?: string) => {
@@ -301,7 +301,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     
     try {
       // Process action through game engine
-      let updatedGameState = MultiplayerGameEngine.processPlayerAction(currentGame, userId, action)
+      const updatedGameState = MultiplayerGameEngine.processPlayerAction(currentGame, userId, action)
       
       // If we moved to dealer phase, process dealer logic
       if (updatedGameState.phase === 'dealer') {

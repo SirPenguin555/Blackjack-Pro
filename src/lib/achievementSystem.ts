@@ -5,6 +5,7 @@
 
 import type { TableLevel, GameVariant } from '@/types/game'
 import type { StatisticsSummary } from './StatsTracker'
+import { safeLocalStorage } from './utils/storage'
 
 export enum AchievementCategory {
   GAMEPLAY = 'gameplay',
@@ -544,7 +545,7 @@ export class AchievementEngine {
 
   private loadPlayerAchievements(): void {
     try {
-      const saved = localStorage.getItem(this.storageKey)
+      const saved = safeLocalStorage.getItem(this.storageKey)
       if (saved) {
         const data = JSON.parse(saved)
         data.achievements?.forEach((achievement: PlayerAchievement) => {
@@ -563,7 +564,7 @@ export class AchievementEngine {
         achievements: Array.from(this.playerAchievements.values()),
         lastSaved: new Date().toISOString()
       }
-      localStorage.setItem(this.storageKey, JSON.stringify(data))
+      safeLocalStorage.setItem(this.storageKey, JSON.stringify(data))
     } catch (error) {
       console.warn('Failed to save achievements:', error)
     }

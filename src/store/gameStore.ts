@@ -287,13 +287,28 @@ export const useGameStore = create<GameStore>((set, get) => {
       updatedPlayers[i].canInsurance = canInsurance(dealerUpCard, state.rules)
     }
 
+    // Find the first player who doesn't have blackjack (auto-stand those with blackjack)
+    let currentPlayerIndex = 0
+    while (currentPlayerIndex < updatedPlayers.length && updatedPlayers[currentPlayerIndex].hand.isBlackjack) {
+      currentPlayerIndex++
+    }
+
+    // If all players have blackjack, go directly to dealer phase
+    const allPlayersHaveBlackjack = currentPlayerIndex >= updatedPlayers.length
+    const phase = allPlayersHaveBlackjack ? 'dealer' : 'playing'
+
     set({
       deck: currentDeck,
       players: updatedPlayers,
       dealer: dealerHand,
-      phase: 'playing',
-      currentPlayerIndex: 0
+      phase: phase,
+      currentPlayerIndex: currentPlayerIndex
     })
+
+    // If all players have blackjack, start dealer play immediately
+    if (allPlayersHaveBlackjack) {
+      setTimeout(() => get().dealerPlay(), 1000)
+    }
   },
 
   playerAction: (playerId: string, action: GameAction) => {
@@ -450,21 +465,30 @@ export const useGameStore = create<GameStore>((set, get) => {
     let nextPlayerIndex = state.currentPlayerIndex
     let shouldAdvancePlayer = false
     
-    if (player.hasSplit && player.isPlayingMainHand && (player.hand.isBusted || action === 'stand' || action === 'double')) {
+    if (player.hasSplit && player.isPlayingMainHand && (player.hand.isBusted || player.hand.isBlackjack || action === 'stand' || action === 'double')) {
       // Just finished main hand, move to split hand
       player.isPlayingMainHand = false
       player.canDouble = player.splitHand ? canDouble(player.splitHand) : false
       player.canSplit = false // Can't split again
-    } else if (player.hasSplit && !player.isPlayingMainHand && (player.splitHand?.isBusted || action === 'stand' || action === 'double')) {
+      
+      // If split hand also has blackjack, auto-advance to next player
+      if (player.splitHand?.isBlackjack) {
+        shouldAdvancePlayer = true
+      }
+    } else if (player.hasSplit && !player.isPlayingMainHand && (player.splitHand?.isBusted || player.splitHand?.isBlackjack || action === 'stand' || action === 'double')) {
       // Finished split hand, move to next player
       shouldAdvancePlayer = true
-    } else if (!player.hasSplit && (player.hand.isBusted || action === 'stand' || action === 'double')) {
+    } else if (!player.hasSplit && (player.hand.isBusted || player.hand.isBlackjack || action === 'stand' || action === 'double')) {
       // Regular hand finished, move to next player
       shouldAdvancePlayer = true
     }
     
     if (shouldAdvancePlayer) {
       nextPlayerIndex = state.currentPlayerIndex + 1
+      // Skip players with blackjack (they auto-stand)
+      while (nextPlayerIndex < updatedPlayers.length && updatedPlayers[nextPlayerIndex].hand.isBlackjack) {
+        nextPlayerIndex++
+      }
     }
 
     // Check if all players are done

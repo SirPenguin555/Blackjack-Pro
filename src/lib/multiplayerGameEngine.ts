@@ -102,7 +102,7 @@ export class MultiplayerGameEngine {
       throw new Error('No players have placed bets')
     }
     
-    let deck = [...gameState.deck]
+    const deck = [...gameState.deck]
     let updatedPlayers = [...gameState.players]
     
     // Deal initial cards (2 to each player, 2 to dealer)
@@ -185,7 +185,7 @@ export class MultiplayerGameEngine {
     }
     
     let updatedGameState = { ...gameState }
-    let deck = [...gameState.deck]
+    const deck = [...gameState.deck]
     const player = gameState.players[playerIndex]
     
     switch (action) {
@@ -399,7 +399,7 @@ export class MultiplayerGameEngine {
    * Start dealer phase
    */
   private static startDealerPhase(gameState: MultiplayerGameState): MultiplayerGameState {
-    let deck = [...gameState.deck]
+    const deck = [...gameState.deck]
     let dealerHand = { ...gameState.dealer }
     
     // Reveal dealer's hole card

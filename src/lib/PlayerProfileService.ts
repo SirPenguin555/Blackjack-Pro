@@ -5,6 +5,7 @@
 
 import type { GameStats } from '@/types/game'
 import { TableLevel, GameVariant } from '@/types/game'
+import { safeLocalStorage } from './utils/storage'
 
 export interface PlayerProfile {
   // Basic game stats
@@ -82,7 +83,7 @@ export class PlayerProfileService {
         return this.getDefaultProfile()
       }
 
-      const saved = localStorage.getItem(this.storageKey)
+      const saved = safeLocalStorage.getItem(this.storageKey)
       if (!saved) {
         return this.getDefaultProfile()
       }
@@ -131,7 +132,7 @@ export class PlayerProfileService {
         version: this.currentVersion
       }
 
-      localStorage.setItem(this.storageKey, JSON.stringify(data))
+      safeLocalStorage.setItem(this.storageKey, JSON.stringify(data))
     } catch (error) {
       console.warn('Failed to save player profile:', error)
     }
@@ -283,7 +284,7 @@ export class PlayerProfileService {
       if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
         return 0
       }
-      const data = localStorage.getItem(this.storageKey)
+      const data = safeLocalStorage.getItem(this.storageKey)
       return data ? new Blob([data]).size : 0
     } catch {
       return 0
@@ -299,7 +300,7 @@ export class PlayerProfileService {
         console.warn('Failed to clear profile: localStorage is not available')
         return
       }
-      localStorage.removeItem(this.storageKey)
+      safeLocalStorage.removeItem(this.storageKey)
     } catch (error) {
       console.warn('Failed to clear profile:', error)
     }

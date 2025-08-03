@@ -82,7 +82,7 @@ export interface PlayerAction {
 
 export interface GameEvent {
   type: 'player_joined' | 'player_left' | 'game_started' | 'player_action' | 'round_ended' | 'chat_message'
-  payload: any
+  payload: Record<string, unknown>
   timestamp: number
 }
 

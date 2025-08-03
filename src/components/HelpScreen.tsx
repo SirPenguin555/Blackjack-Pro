@@ -1,7 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
 import { useState } from 'react'
-import { GameStats } from '@/types/game'
-import { RULE_CONFIGURATIONS, GameVariant } from '@/lib/ruleVariations'
-import { TABLE_CONFIGURATIONS, TableLevel } from '@/lib/tableSystem'
 
 interface HelpScreenProps {
   onBack: () => void
@@ -121,7 +119,7 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
           <section>
             <h2 className="text-2xl font-bold text-yellow-400 mb-4">📋 Basic Rules</h2>
             <div className="text-white space-y-3">
-              <p><strong>Objective:</strong> Get as close to 21 as possible without going over, while beating the dealer's hand.</p>
+              <p><strong>Objective:</strong> Get as close to 21 as possible without going over, while beating the dealer&apos;s hand.</p>
               
               <div>
                 <strong>Card Values:</strong>

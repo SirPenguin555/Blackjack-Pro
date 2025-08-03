@@ -70,7 +70,10 @@ export interface GameStats {
 
 // Re-export table system types for convenience
 export { 
-  TableLevel, 
+  TableLevel
+} from '../lib/tableSystem'
+
+export type { 
   TableConfiguration, 
   TableRequirements, 
   TableTheme 
@@ -78,8 +81,15 @@ export {
 
 // Re-export rule variations types for convenience
 export {
-  GameVariant,
-  RuleSet,
+  GameVariant
+} from '../lib/ruleVariations'
+
+export type {
+  RuleSet
+} from '../lib/ruleVariations'
+
+// Re-export specific non-type exports
+export {
   VariationEngine,
   RULE_CONFIGURATIONS
 } from '../lib/ruleVariations'

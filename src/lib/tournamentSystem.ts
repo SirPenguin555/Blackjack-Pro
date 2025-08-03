@@ -1,3 +1,5 @@
+import { safeLocalStorage } from './utils/storage'
+
 export interface Tournament {
   id: string
   name: string
@@ -210,7 +212,7 @@ export class TournamentEngine {
 
   private loadTournamentHistory() {
     try {
-      const saved = localStorage.getItem('tournament-history')
+      const saved = safeLocalStorage.getItem('tournament-history')
       if (saved) {
         this.tournamentHistory = JSON.parse(saved)
       }
@@ -221,7 +223,7 @@ export class TournamentEngine {
 
   private saveTournamentHistory() {
     try {
-      localStorage.setItem('tournament-history', JSON.stringify(this.tournamentHistory))
+      safeLocalStorage.setItem('tournament-history', JSON.stringify(this.tournamentHistory))
     } catch (error) {
       console.warn('Failed to save tournament history:', error)
     }
