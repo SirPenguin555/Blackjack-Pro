@@ -116,7 +116,12 @@ export function BlackjackGame() {
   
   
   // Check for bankruptcy - only show after a round completes, not at the start
-  const isBankrupt = mainPlayer && mainPlayer.chips === 0 && mainPlayer.bet === 0 && (phase === 'finished' || phase === 'betting')
+  // Don't show bankruptcy if player just won money in the current round
+  const isBankrupt = mainPlayer && 
+    mainPlayer.chips === 0 && 
+    mainPlayer.bet === 0 && 
+    (phase === 'finished' || phase === 'betting') &&
+    (mainPlayer.lastHandWinnings === undefined || mainPlayer.lastHandWinnings <= 0)
 
   // Update strategy advice in easy mode
   useEffect(() => {

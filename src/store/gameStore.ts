@@ -493,7 +493,20 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     // Check if all players are done
     const allPlayersDone = nextPlayerIndex >= updatedPlayers.length
-    const newPhase = allPlayersDone ? 'dealer' : 'playing'
+    
+    // Check if all players have busted or surrendered (dealer doesn't need to play)
+    const allPlayersBustedOrSurrendered = updatedPlayers.every(player => {
+      if (player.hasSurrendered) return true
+      if (player.hasSplit) {
+        // For split hands, both hands must be busted
+        return player.hand.isBusted && player.splitHand?.isBusted
+      } else {
+        // For regular hands, just check if main hand is busted
+        return player.hand.isBusted
+      }
+    })
+    
+    const newPhase = allPlayersDone ? (allPlayersBustedOrSurrendered ? 'finished' : 'dealer') : 'playing'
 
     set({
       deck: currentDeck,
@@ -502,9 +515,15 @@ export const useGameStore = create<GameStore>((set, get) => {
       phase: newPhase
     })
 
-    // If all players are done, start dealer play
-    if (allPlayersDone) {
+    // If all players are done, start dealer play (unless all busted/surrendered)
+    if (allPlayersDone && !allPlayersBustedOrSurrendered) {
       setTimeout(() => get().dealerPlay(), 1000)
+    } else if (allPlayersDone && allPlayersBustedOrSurrendered) {
+      // All players busted/surrendered, skip dealer and finish round
+      setTimeout(() => {
+        set({ phase: 'finished' })
+        setTimeout(() => get().finishRound(), 1000)
+      }, 1000)
     }
   },
 
