@@ -170,13 +170,14 @@ export class MultiplayerService {
       canDouble: false,
       canSplit: false,
       hasSplit: false,
-      splitHand: undefined,
+      splitHand: null, // Use null instead of undefined for Firestore compatibility
       isPlayingMainHand: true,
-      lastHandWinnings: undefined,
+      lastHandWinnings: null, // Use null instead of undefined for Firestore compatibility
       position: 0, // Will be set by server
       isHost: false,
       isConnected: true,
-      lastSeen: Date.now()
+      lastSeen: Date.now(),
+      avatar: null // Use null instead of undefined for Firestore compatibility
     }
 
     // Update table player count

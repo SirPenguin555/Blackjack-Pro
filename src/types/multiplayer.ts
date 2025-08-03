@@ -5,10 +5,10 @@ export interface MultiplayerPlayer extends Player {
   isHost: boolean
   isConnected: boolean
   lastSeen: number // Timestamp
-  avatar?: string
-  splitHand?: Hand // For split hands
+  avatar: string | null // Use null instead of undefined for Firestore compatibility
+  splitHand: Hand | null // For split hands - use null instead of undefined
   isPlayingMainHand: boolean // Track which hand is active during split
-  lastHandWinnings?: number // Track winnings from last hand
+  lastHandWinnings: number | null // Track winnings from last hand - use null instead of undefined
 }
 
 export interface GameTable {
