@@ -309,7 +309,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
             type="text"
             value={tempPlayerName}
             onChange={(e) => setTempPlayerName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             placeholder="Enter your name"
             maxLength={20}
           />
@@ -347,7 +347,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
 
         {/* Available Tables */}
         <div className="bg-white rounded-lg p-6">
-          <h3 className="text-xl font-bold mb-4">Available Tables</h3>
+          <h3 className="text-xl font-bold mb-4 text-gray-900">Available Tables</h3>
           {availableTables.length === 0 ? (
             <p className="text-gray-500">No tables available. Create one to get started!</p>
           ) : (
@@ -358,7 +358,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                   className="flex justify-between items-center p-3 border rounded-lg hover:bg-gray-50"
                 >
                   <div>
-                    <h4 className="font-medium">{table.name}</h4>
+                    <h4 className="font-medium text-gray-900">{table.name}</h4>
                     <p className="text-sm text-gray-500">
                       {table.currentPlayers}/{table.maxPlayers} players
                       {table.isPrivate && ' • Private'}
@@ -387,7 +387,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
         {showCreateForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-xl font-bold mb-4">Create New Table</h3>
+              <h3 className="text-xl font-bold mb-4 text-gray-900">Create New Table</h3>
               
               <div className="space-y-4">
                 <div>
@@ -398,7 +398,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                     type="text"
                     value={formData.tableName}
                     onChange={(e) => setFormData(prev => ({ ...prev, tableName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     placeholder="Enter table name"
                     maxLength={30}
                   />
@@ -411,7 +411,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                   <select
                     value={formData.maxPlayers}
                     onChange={(e) => setFormData(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   >
                     <option value={2}>2 Players</option>
                     <option value={3}>3 Players</option>
@@ -428,7 +428,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                       type="number"
                       value={formData.minBet}
                       onChange={(e) => setFormData(prev => ({ ...prev, minBet: parseInt(e.target.value) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                       min={1}
                       max={100}
                     />
@@ -441,7 +441,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                       type="number"
                       value={formData.maxBet}
                       onChange={(e) => setFormData(prev => ({ ...prev, maxBet: parseInt(e.target.value) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                       min={formData.minBet}
                       max={1000}
                     />
@@ -470,7 +470,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                       placeholder="Enter password"
                     />
                   </div>
@@ -514,10 +514,10 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
         {showJoinForm && selectedTable && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-xl font-bold mb-4">Join Table</h3>
+              <h3 className="text-xl font-bold mb-4 text-gray-900">Join Table</h3>
               
               <div className="mb-4">
-                <h4 className="font-medium">{selectedTable.name}</h4>
+                <h4 className="font-medium text-gray-900">{selectedTable.name}</h4>
                 <p className="text-sm text-gray-500">
                   {selectedTable.currentPlayers}/{selectedTable.maxPlayers} players
                 </p>
@@ -532,7 +532,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                     type="password"
                     value={joinPassword}
                     onChange={(e) => setJoinPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     placeholder="Enter table password"
                   />
                 </div>
@@ -566,7 +566,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
         {showJoinByCodeForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-xl font-bold mb-4">Join Table by Code</h3>
+              <h3 className="text-xl font-bold mb-4 text-gray-900">Join Table by Code</h3>
               
               <div className="space-y-4">
                 <div>
@@ -580,7 +580,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                       ...prev, 
                       tableCode: e.target.value.toUpperCase().slice(0, 6) 
                     }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-center text-lg tracking-widest"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-center text-lg tracking-widest text-gray-900"
                     placeholder="ABC123"
                     maxLength={6}
                   />
@@ -595,7 +595,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                     type="text"
                     value={joinByCodeData.playerName}
                     onChange={(e) => setJoinByCodeData(prev => ({ ...prev, playerName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     placeholder="Enter your name"
                     maxLength={20}
                   />
@@ -609,7 +609,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                     type="password"
                     value={joinByCodeData.password}
                     onChange={(e) => setJoinByCodeData(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                     placeholder="Leave blank if not required"
                   />
                 </div>
