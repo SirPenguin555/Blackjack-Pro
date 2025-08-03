@@ -82,7 +82,7 @@ export class MultiplayerService {
       maxPlayers,
       currentPlayers: 0,
       isPrivate,
-      password,
+      password: password || null,
       tableCode,
       status: 'waiting',
       createdAt: Date.now(),
