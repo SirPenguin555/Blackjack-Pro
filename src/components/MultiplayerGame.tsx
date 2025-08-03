@@ -160,7 +160,7 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
                       {player.bet > 0 && (
                         <div className="text-sm text-gray-300">Bet: ${player.bet}</div>
                       )}
-                      <div className="flex items-center text-xs">
+                      <div className="flex items-center text-xs text-gray-300">
                         <div className={`w-2 h-2 rounded-full mr-1 ${
                           player.isConnected ? 'bg-green-400' : 'bg-red-400'
                         }`}></div>

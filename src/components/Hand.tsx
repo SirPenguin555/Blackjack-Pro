@@ -34,7 +34,7 @@ export function Hand({ hand, label, className = '', isDealing = false, dealingSp
   
   return (
     <div className={`flex flex-col items-center space-y-2 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-800">{label}</h3>
+      <h3 className="text-lg font-semibold text-white">{label}</h3>
       <div className="flex space-x-2">
         {hand.cards.map((card, index) => {
           const isNewCard = index >= previousCardCount - 1 && isDealing
@@ -52,9 +52,9 @@ export function Hand({ hand, label, className = '', isDealing = false, dealingSp
       </div>
       <div className="text-center">
         {!hasHiddenCards && (
-          <div className={`text-sm text-gray-800 transition-smooth ${valueChanged ? 'animate-valueUpdate' : ''}`}>
+          <div className={`text-sm text-white transition-smooth ${valueChanged ? 'animate-valueUpdate' : ''}`}>
             Value: {hand.value}
-            {hand.isSoft && <span className=" text-blue-600"> (Soft)</span>}
+            {hand.isSoft && <span className="text-blue-300"> (Soft)</span>}
           </div>
         )}
         {hand.isBlackjack && !hasHiddenCards && (

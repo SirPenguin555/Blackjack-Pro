@@ -51,7 +51,7 @@ export function ChipSelector({ denominations, selectedBet, onBetChange, maxBet, 
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <div className={`text-base sm:text-lg font-semibold ${valueAnimation ? 'animate-valueUpdate' : ''}`}>
+      <div className={`text-base sm:text-lg font-semibold text-white ${valueAnimation ? 'animate-valueUpdate' : ''}`}>
         Current Bet: <span className={`text-yellow-400 ${isWinning ? 'animate-winningChips' : ''}`}>${selectedBet}</span>
       </div>
       

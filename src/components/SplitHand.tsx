@@ -23,14 +23,14 @@ export function SplitHand({ mainHand, splitHand, label, className = '', isPlayin
 
   return (
     <div className={`flex flex-col items-center space-y-4 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-800">{label}</h3>
+      <h3 className="text-lg font-semibold text-white">{label}</h3>
       
       <div className="flex space-x-8 justify-center">
         {/* Main Hand */}
         <div className={`flex flex-col items-center space-y-2 ${
           isPlayingMainHand ? 'ring-2 ring-yellow-400 ring-opacity-75 rounded-lg p-2' : ''
         }`}>
-          <div className="text-sm font-medium text-gray-700">
+          <div className="text-sm font-medium text-white">
             Hand 1 {isPlayingMainHand ? '(Active)' : ''}
           </div>
           <div className="flex space-x-2">
@@ -60,9 +60,9 @@ export function SplitHand({ mainHand, splitHand, label, className = '', isPlayin
             ))}
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-800">
+            <div className="text-sm text-white">
               Value: {mainHand.value}
-              {mainHand.isSoft && <span className="text-blue-600"> (Soft)</span>}
+              {mainHand.isSoft && <span className="text-blue-300"> (Soft)</span>}
             </div>
             {mainHand.isBlackjack && (
               <div className="text-sm font-bold text-yellow-600">Blackjack!</div>
@@ -77,7 +77,7 @@ export function SplitHand({ mainHand, splitHand, label, className = '', isPlayin
         <div className={`flex flex-col items-center space-y-2 ${
           !isPlayingMainHand ? 'ring-2 ring-yellow-400 ring-opacity-75 rounded-lg p-2' : ''
         }`}>
-          <div className="text-sm font-medium text-gray-700">
+          <div className="text-sm font-medium text-white">
             Hand 2 {!isPlayingMainHand ? '(Active)' : ''}
           </div>
           <div className="flex space-x-2">
@@ -107,9 +107,9 @@ export function SplitHand({ mainHand, splitHand, label, className = '', isPlayin
             ))}
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-800">
+            <div className="text-sm text-white">
               Value: {splitHand.value}
-              {splitHand.isSoft && <span className="text-blue-600"> (Soft)</span>}
+              {splitHand.isSoft && <span className="text-blue-300"> (Soft)</span>}
             </div>
             {splitHand.isBlackjack && (
               <div className="text-sm font-bold text-yellow-600">Blackjack!</div>
