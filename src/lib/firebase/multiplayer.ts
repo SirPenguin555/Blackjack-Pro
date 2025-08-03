@@ -268,12 +268,23 @@ export class MultiplayerService {
   /**
    * Send a chat message
    */
-  async sendChatMessage(tableId: string, message: string): Promise<void> {
+  async sendChatMessage(tableId: string, message: string, playerName?: string): Promise<void> {
+    if (isDemoMode || !db) {
+      console.warn('Demo mode or Firebase unavailable: Mock sending chat message')
+      return
+    }
+
     const user = await ensureAuthenticated()
+
+    // Check if we're using a mock user (when anonymous auth is disabled)
+    if (user.uid.startsWith('mock-user-') || user.uid.startsWith('demo-user-')) {
+      console.warn('Using mock authentication - cannot send real chat messages')
+      return
+    }
 
     const chatMessage: Omit<ChatMessage, 'id'> = {
       userId: user.uid,
-      playerName: user.displayName || 'Anonymous',
+      playerName: playerName || user.displayName || 'Anonymous',
       message,
       timestamp: Date.now(),
       type: 'chat'

@@ -52,7 +52,7 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault()
     if (chatMessage.trim() && currentTable) {
-      await sendChatMessage(currentTable.id, chatMessage.trim())
+      await sendChatMessage(chatMessage.trim())
       setChatMessage('')
     }
   }

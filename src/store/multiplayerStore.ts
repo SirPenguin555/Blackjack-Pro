@@ -235,12 +235,12 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   },
 
   sendChatMessage: async (message: string) => {
-    const { service, currentTable } = get()
+    const { service, currentTable, playerName } = get()
     
     if (!currentTable || !service) return
     
     try {
-      await service.sendChatMessage(currentTable.id, message)
+      await service.sendChatMessage(currentTable.id, message, playerName || 'Anonymous')
     } catch (error) {
       console.error('Failed to send chat message:', error)
       throw error
