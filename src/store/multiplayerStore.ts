@@ -24,6 +24,7 @@ interface MultiplayerStore extends MultiplayerState {
   findTableByCode: (tableCode: string) => Promise<GameTable | null>
   leaveTable: () => Promise<void>
   sendChatMessage: (message: string) => Promise<void>
+  cleanupInactiveTables: () => Promise<void>
   setConnectionStatus: (status: ConnectionStatus) => void
   setCurrentTable: (table: GameTable | null) => void
   setCurrentGame: (game: MultiplayerGameState | null) => void
@@ -243,6 +244,18 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     } catch (error) {
       console.error('Failed to send chat message:', error)
       throw error
+    }
+  },
+
+  cleanupInactiveTables: async () => {
+    const { service } = get()
+    
+    if (!service) return
+    
+    try {
+      await service.cleanupInactiveTables()
+    } catch (error) {
+      console.error('Failed to cleanup inactive tables:', error)
     }
   },
 

@@ -20,7 +20,7 @@ export interface GameTable {
   isPrivate: boolean
   password?: string
   tableCode: string // 6-character code for easy joining
-  status: 'waiting' | 'playing' | 'finished'
+  status: 'waiting' | 'playing' | 'finished' | 'offline'
   createdAt: number
   settings: TableSettings
 }

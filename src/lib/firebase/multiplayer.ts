@@ -195,21 +195,74 @@ export class MultiplayerService {
    * Leave a table
    */
   async leaveTable(tableId: string): Promise<void> {
+    if (isDemoMode || !db) {
+      console.warn('Demo mode or Firebase unavailable: Mock leaving table')
+      return
+    }
+
     const user = await ensureAuthenticated()
+
+    // Check if we're using a mock user (when anonymous auth is disabled)
+    if (user.uid.startsWith('mock-user-') || user.uid.startsWith('demo-user-')) {
+      console.warn('Using mock authentication - cannot leave real tables')
+      return
+    }
 
     const tableRef = doc(db, 'tables', tableId)
     const gameRef = doc(db, 'games', tableId)
 
-    // Update table player count
-    await updateDoc(tableRef, {
-      currentPlayers: increment(-1)
-    })
+    // Get current table data to check player count
+    const tableDoc = await getDoc(tableRef)
+    if (!tableDoc.exists()) {
+      console.warn('Table not found when trying to leave:', tableId)
+      return
+    }
 
-    // Remove player from game
-    await updateDoc(gameRef, {
-      [`playerConnections.${user.uid}`]: false,
-      spectators: arrayRemove(user.uid)
-    })
+    const tableData = tableDoc.data() as GameTable
+    const newPlayerCount = Math.max(0, tableData.currentPlayers - 1)
+
+    // If this is the last player leaving, delete the table completely
+    if (newPlayerCount === 0) {
+      console.log('Last player leaving table, deleting table:', tableId)
+      
+      try {
+        // Delete the table document
+        await deleteDoc(tableRef)
+        console.log('Table document deleted:', tableId)
+        
+        // Also delete the game state if it exists
+        const gameDoc = await getDoc(gameRef)
+        if (gameDoc.exists()) {
+          await deleteDoc(gameRef)
+          console.log('Game state deleted:', tableId)
+        }
+        
+        console.log('Empty table cleanup completed:', tableId)
+      } catch (deleteError) {
+        console.error('Error deleting empty table:', deleteError)
+        // If deletion fails, at least mark it as offline
+        try {
+          await updateDoc(tableRef, {
+            status: 'offline',
+            currentPlayers: 0
+          })
+          console.log('Marked table as offline due to deletion error:', tableId)
+        } catch (updateError) {
+          console.error('Failed to mark table as offline:', updateError)
+        }
+      }
+    } else {
+      // Update table player count if there are still players
+      await updateDoc(tableRef, {
+        currentPlayers: newPlayerCount
+      })
+
+      // Remove player from game
+      await updateDoc(gameRef, {
+        [`playerConnections.${user.uid}`]: false,
+        spectators: arrayRemove(user.uid)
+      })
+    }
   }
 
   /**
@@ -283,6 +336,12 @@ export class MultiplayerService {
    * Get available public tables
    */
   subscribeToAvailableTables(callback: (tables: GameTable[]) => void): Unsubscribe {
+    if (isDemoMode || !db) {
+      // Return empty tables list for demo mode
+      callback([])
+      return () => {}
+    }
+
     const tablesQuery = query(
       collection(db, 'tables'),
       where('isPrivate', '==', false),
@@ -325,6 +384,52 @@ export class MultiplayerService {
     const gameRef = doc(db, 'games', tableId)
     // Use setDoc instead of updateDoc for initial creation
     await setDoc(gameRef, initialGameState)
+  }
+
+  /**
+   * Check and cleanup inactive tables (tables with no active connections)
+   */
+  async cleanupInactiveTables(): Promise<void> {
+    if (isDemoMode || !db) {
+      return
+    }
+
+    try {
+      // Get all active tables
+      const tablesQuery = query(
+        collection(db, 'tables'),
+        where('status', '==', 'waiting')
+      )
+      
+      const tablesSnapshot = await getDocs(tablesQuery)
+      
+      for (const tableDoc of tablesSnapshot.docs) {
+        const tableData = tableDoc.data() as GameTable
+        const gameRef = doc(db, 'games', tableDoc.id)
+        const gameDoc = await getDoc(gameRef)
+        
+        if (gameDoc.exists()) {
+          const gameData = gameDoc.data()
+          const connections = gameData.playerConnections || {}
+          
+          // Count active connections
+          const activeConnections = Object.values(connections).filter(Boolean).length
+          
+          // If no active connections and currentPlayers is 0, delete the table
+          if (activeConnections === 0 && tableData.currentPlayers === 0) {
+            console.log('Cleaning up inactive table:', tableDoc.id)
+            await deleteDoc(doc(db, 'tables', tableDoc.id))
+            await deleteDoc(gameRef)
+          }
+        } else if (tableData.currentPlayers === 0) {
+          // If game doesn't exist and no players, delete the table
+          console.log('Cleaning up orphaned table:', tableDoc.id)
+          await deleteDoc(doc(db, 'tables', tableDoc.id))
+        }
+      }
+    } catch (error) {
+      console.error('Error during table cleanup:', error)
+    }
   }
 
   /**

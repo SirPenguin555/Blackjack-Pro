@@ -104,6 +104,23 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
     initialize()
   }, [initialize])
 
+  // Cleanup inactive tables periodically
+  useEffect(() => {
+    const { cleanupInactiveTables } = useMultiplayerStore.getState()
+    
+    // Run cleanup when component mounts
+    cleanupInactiveTables()
+    
+    // Set up periodic cleanup every 2 minutes
+    const cleanupInterval = setInterval(() => {
+      cleanupInactiveTables()
+    }, 2 * 60 * 1000) // 2 minutes
+    
+    return () => {
+      clearInterval(cleanupInterval)
+    }
+  }, [])
+
   const handleCreateTable = async () => {
     if (!formData.tableName.trim() || !tempPlayerName.trim()) return
 
