@@ -121,8 +121,8 @@ export function shouldDealerHit(hand: Hand, rules?: RuleSet): boolean {
   if (hand.value < 17) return true
   if (hand.value > 17) return false
   
-  // Dealer hits on soft 17 (common casino rule)
-  return hand.value === 17 && hand.isSoft
+  // Dealer stands on soft 17 (standard casino rule)
+  return false
 }
 
 export function determineWinner(playerHand: Hand, dealerHand: Hand): 'player' | 'dealer' | 'push' {

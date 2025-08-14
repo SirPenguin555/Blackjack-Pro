@@ -25,9 +25,10 @@ export default function BankrollChallenges({ onClose }: BankrollChallengesProps)
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([])
 
   useEffect(() => {
+    const currentChips = useGameStore.getState().players[0]?.chips || 0
     const playerStats = {
       ...stats,
-      maxChips: statsTracker.getStatisticsSummary().maxBankroll,
+      maxChips: currentChips,
       currentTableLevel: useGameStore.getState().currentTableLevel,
       achievements: [] // This would come from achievement system
     }

@@ -40,8 +40,8 @@ export const RULE_CONFIGURATIONS: Record<GameVariant, RuleSet> = {
   [GameVariant.VEGAS]: {
     id: GameVariant.VEGAS,
     name: 'Vegas Rules',
-    description: 'Classic Las Vegas blackjack with dealer hits soft 17',
-    dealerHitsSoft17: true,
+    description: 'Classic Las Vegas blackjack with dealer stands on soft 17',
+    dealerHitsSoft17: false,
     dealerPeeksForBlackjack: true,
     noHoleCard: false,
     doubleAfterSplit: true,

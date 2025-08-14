@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useGameStore, CHIP_DENOMINATIONS } from '@/store/gameStore'
 import { GameAction } from '@/types/game'
 import { Hand } from './Hand'
@@ -8,33 +9,23 @@ import { ChipSelector } from './ChipSelector'
 import { GameActions } from './GameActions'
 import { TitleScreen } from './TitleScreen'
 import { TutorialOverlay } from './TutorialOverlay'
-import { StatsScreen } from './StatsScreen'
-import { SaveLoadScreen } from './SaveLoadScreen'
 import { ResetConfirmation } from './ResetConfirmation'
 import { MenuWarning } from './MenuWarning'
 import { BankruptcyScreen } from './BankruptcyScreen'
 import { StrategyHint } from './StrategyHint'
-import { HelpScreen } from './HelpScreen'
 import { SplitHand } from './SplitHand'
 import { AudioControls } from './AudioControls'
-import { MultiplayerLobby } from './MultiplayerLobby'
-import { MultiplayerGame } from './MultiplayerGame'
 import { AchievementNotification } from './AchievementNotification'
-import BankrollChallenges from './BankrollChallenges'
-import TournamentLobby from './TournamentLobby'
-import TournamentGame from './TournamentGame'
 import DealerMode from './DealerMode'
 import { useAudio } from '@/hooks/useAudio'
 import { useGameSounds } from '@/hooks/useGameSounds'
 import { useDynamicMusic } from '@/hooks/useDynamicMusic'
 import { useAdaptiveAnimation, useDeviceCapabilities } from '@/hooks/usePerformance'
 import { getSoundService } from '@/lib/audio/SoundService'
-import { Tournament } from '@/lib/tournamentSystem'
-import { useMultiplayerStore } from '@/store/multiplayerStore'
 import { debounce } from '@/lib/performance'
 
 export function BlackjackGame() {
-  const [activeTournament, setActiveTournament] = useState<Tournament | null>(null)
+  const router = useRouter()
   
   // Performance optimization hooks
   const { shouldReduceMotion, animationClass } = useAdaptiveAnimation()
@@ -50,6 +41,7 @@ export function BlackjackGame() {
     stats,
     tutorial,
     currentStrategyAdvice,
+    currentTableLevel,
     setGameMode,
     initializeGame,
     placeBet,
@@ -72,9 +64,6 @@ export function BlackjackGame() {
 
   const currentPlayer = players[currentPlayerIndex]
   const mainPlayer = players[0] // For single player, we'll focus on the first player
-  
-  // Multiplayer state
-  const { currentTable, currentGame } = useMultiplayerStore()
   
   // Audio system
   const { audioManager } = useAudio()
@@ -185,7 +174,7 @@ export function BlackjackGame() {
     if (isGameActive) {
       setShowMenuWarning(true)
     } else {
-      setGameMode('menu')
+      router.push('/')
     }
   }
 
@@ -193,7 +182,7 @@ export function BlackjackGame() {
     // Record the loss in statistics if there was an active bet
     recordMenuExit()
     setShowMenuWarning(false)
-    setGameMode('menu')
+    router.push('/')
   }
 
   const handleCancelMenuExit = () => {
@@ -242,106 +231,13 @@ export function BlackjackGame() {
     return ''
   }
 
-  // Show title screen if in menu mode
-  if (gameMode === 'menu') {
-    return <TitleScreen onModeSelect={setGameMode} />
-  }
 
-  // Show stats screen if in stats mode
-  if (gameMode === 'stats') {
-    return (
-      <StatsScreen
-        stats={stats}
-        onBack={() => setGameMode('menu')}
-        onReset={() => {
-          resetStats()
-          setGameMode('menu')
-        }}
-      />
-    )
-  }
-  
-  // Show save/load screen if in saveload mode
-  if (gameMode === 'saveload') {
-    return (
-      <SaveLoadScreen
-        onBack={() => setGameMode('menu')}
-        onProfileLoaded={() => {
-          // Reload the page to refresh all game state with loaded profile
-          window.location.reload()
-        }}
-      />
-    )
-  }
-
-  // Show help screen if in help mode
-  if (gameMode === 'help') {
-    return (
-      <HelpScreen
-        onBack={() => setGameMode('menu')}
-      />
-    )
-  }
-
-  // Show challenges screen if in challenges mode
-  if (gameMode === 'challenges') {
-    return (
-      <BankrollChallenges
-        onClose={() => setGameMode('menu')}
-      />
-    )
-  }
-
-  // Show tournaments screen if in tournaments mode
-  if (gameMode === 'tournaments') {
-    return (
-      <TournamentLobby
-        onBack={() => setGameMode('menu')}
-        onJoinTournament={(tournament) => {
-          setActiveTournament(tournament)
-          setGameMode('normal') // Switch to game mode for tournament play
-        }}
-      />
-    )
-  }
-
-  // Show tournament game if there's an active tournament
-  if (activeTournament) {
-    return (
-      <TournamentGame
-        tournament={activeTournament}
-        onExit={() => {
-          setActiveTournament(null)
-          setGameMode('menu')
-        }}
-      />
-    )
-  }
 
   // Show dealer mode if in dealer mode
   if (gameMode === 'dealer') {
     return (
       <DealerMode
-        onExit={() => setGameMode('menu')}
-      />
-    )
-  }
-
-  // Show multiplayer lobby if in multiplayer mode
-  if (gameMode === 'multiplayer') {
-    // If we're in an active multiplayer game, show the game
-    if (currentTable && currentGame) {
-      return (
-        <MultiplayerGame
-          onBack={() => setGameMode('menu')}
-        />
-      )
-    }
-    
-    // Otherwise show the lobby
-    return (
-      <MultiplayerLobby
-        onBack={() => setGameMode('menu')}
+        onExit={() => router.push('/')}
       />
     )
   }
@@ -352,9 +248,9 @@ export function BlackjackGame() {
       <ResetConfirmation
         onConfirm={() => {
           resetProgress()
-          setGameMode('menu')
+          router.push('/')
         }}
-        onCancel={() => setGameMode('menu')}
+        onCancel={() => router.push('/')}
       />
     )
   }
@@ -398,6 +294,7 @@ export function BlackjackGame() {
             />
           </div>
           
+
           <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2">Blackjack Pro</h1>
           <div className="text-white text-sm sm:text-base">
             Round {round} | Chips: ${mainPlayer.chips}
@@ -447,6 +344,8 @@ export function BlackjackGame() {
                     onBetChange={handleBetChange}
                     maxBet={mainPlayer.chips}
                     isWinning={phase === 'finished' && mainPlayer.lastHandWinnings !== undefined && mainPlayer.lastHandWinnings > 0}
+                    tableLevel={currentTableLevel}
+                    playerChips={mainPlayer.chips}
                   />
                 </div>
                 <div className={`text-center ${getHighlightClass('cards')}`}>

@@ -84,16 +84,14 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Dynamically import Firebase only when needed
-        const { signInAnonymously } = await import('firebase/auth')
-        const { auth } = await import('@/lib/firebase/config')
+        // Dynamically import Supabase only when needed
+        const { ensureAuthenticated } = await import('@/lib/supabase/config')
         
-        if (!auth.currentUser) {
-          await signInAnonymously(auth)
-          console.log('Successfully signed in anonymously')
-        }
+        // Ensure user is authenticated (will create anonymous user if needed)
+        await ensureAuthenticated()
+        console.log('Successfully authenticated for multiplayer')
       } catch (error) {
-        console.error('Failed to initialize Firebase:', error)
+        console.error('Failed to initialize Supabase:', error)
         // Set connection status to error so user sees appropriate message
         setConnectionStatus('error')
         setErrorMessage(error instanceof Error ? error.message : 'Failed to initialize multiplayer features')
@@ -227,7 +225,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
             
             <div className="mb-6 space-y-3">
               <p className="text-gray-700">
-                <strong>Multiplayer features require Firebase setup.</strong>
+                <strong>Multiplayer features require Supabase setup.</strong>
               </p>
               
               {errorMessage && (
@@ -239,9 +237,9 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                     <div className="mt-2 text-sm text-red-700">
                       <p><strong>To fix this:</strong></p>
                       <ol className="list-decimal list-inside mt-1 space-y-1">
-                        <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="underline">Firebase Console</a></li>
-                        <li>Select your project → Authentication → Sign-in method</li>
-                        <li>Enable "Anonymous" authentication</li>
+                        <li>Go to <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="underline">Supabase Dashboard</a></li>
+                        <li>Select your project → Authentication → Settings</li>
+                        <li>Enable "Anonymous sign-ins" if required</li>
                         <li>Save and refresh this page</li>
                       </ol>
                     </div>
@@ -254,9 +252,9 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
                   <strong>For developers:</strong> To enable multiplayer, you need to:
                 </p>
                 <ul className="list-disc list-inside mt-2 text-sm text-blue-700 space-y-1">
-                  <li>Set up a Firebase project</li>
-                  <li>Configure Firebase credentials in environment variables</li>
-                  <li>Or run Firebase emulators locally</li>
+                  <li>Set up a Supabase project</li>
+                  <li>Configure Supabase credentials in environment variables</li>
+                  <li>Or set NEXT_PUBLIC_DEMO_MODE=true for development</li>
                 </ul>
               </div>
               
@@ -310,7 +308,7 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
               <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-sm text-yellow-800 font-semibold">Quick Fix:</p>
                 <p className="text-sm text-yellow-700 mt-1">
-                  Enable Anonymous authentication in your Firebase Console → Authentication → Sign-in method
+                  Enable Anonymous authentication in your Supabase Dashboard → Authentication → Settings
                 </p>
               </div>
             )}

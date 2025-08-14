@@ -196,9 +196,9 @@ export default function TournamentLobby({ onBack, onJoinTournament }: Tournament
           <div className="flex items-center space-x-2">
             <div className="text-yellow-600 text-xl">⚠️</div>
             <div>
-              <h3 className="font-semibold text-yellow-800">Warning</h3>
+              <h3 className="font-semibold text-yellow-800">Development Notice</h3>
               <p className="text-yellow-700 text-sm">
-                This feature may not be working due to a lack of multiplayer testing.
+                Feature in development, not currently working.
               </p>
             </div>
           </div>

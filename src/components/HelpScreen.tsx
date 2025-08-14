@@ -700,28 +700,59 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
                 
                 <div className="space-y-6">
                   <div className="bg-orange-800 bg-opacity-60 p-6 rounded-lg">
-                    <h3 className="text-xl font-bold text-orange-400 mb-4">Beta 6.0 - Latest Updates</h3>
+                    <h3 className="text-xl font-bold text-orange-400 mb-4">Version 1.1 - Navigation & Bug Fixes</h3>
                     <div className="text-white space-y-3">
                       <div className="bg-green-700 bg-opacity-50 p-3 rounded">
                         <p className="font-semibold text-green-300">✅ New Features</p>
-                        <div className="text-sm mt-2">
-                          <p>First fully-stable release for singleplayer modes</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Implemented proper routing with dedicated page paths</p>
+                          <p>• Added separate routes: /tournaments, /multiplayer, /challenges, /stats, /help, /save-load</p>
+                          <p>• Improved navigation with browser back/forward button support</p>
+                          <p>• Enhanced URL structure for better bookmarking and sharing</p>
                         </div>
                       </div>
                       
                       <div className="bg-blue-700 bg-opacity-50 p-3 rounded">
                         <p className="font-semibold text-blue-300">🔧 Bug Fixes</p>
                         <div className="text-sm mt-2 space-y-1">
-                          <p>No bugfixes for now.</p>
-                          <p>If you find any bugs, please report them.</p>
+                          <p>• Fixed critical dealer bust logic - players now correctly win when dealer busts</p>
+                          <p>• Resolved card visibility issues during dealer play</p>
+                          <p>• Fixed all-in betting feature for players with insufficient chips for minimum bet</p>
+                          <p>• Improved game state management for accurate payout calculations</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-purple-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-purple-300">🎯 Improvements</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Streamlined core game component by separating routing concerns</p>
+                          <p>• Better code organization with dedicated page components</p>
+                          <p>• Enhanced user experience with proper page-based navigation</p>
+                          <p>• Improved performance through component separation</p>
                         </div>
                       </div>
                       
                       <div className="bg-yellow-700 bg-opacity-50 p-3 rounded">
                         <p className="font-semibold text-yellow-300">📝 Notes</p>
-                        <div className="text-sm mt-2">
-                          <p>Due to a lack of playtesting, multiplayer modes may not work.</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• All game logic bugs from version 1.0 have been resolved</p>
+                          <p>• Routing system provides foundation for future feature expansion</p>
+                          <p>• Core gameplay is now fully stable and tested</p>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-lg font-bold text-gray-300 mb-4">Version 1.0 - Stable Release (Previous)</h3>
+                    <div className="text-white space-y-2">
+                      <div className="bg-green-700 bg-opacity-30 p-2 rounded text-sm">
+                        <p className="font-semibold text-green-300">Features:</p>
+                        <p>Complete single-player experience, tutorial system, progressive unlocking, save/load functionality, audio system, multiplayer foundation</p>
+                      </div>
+                      <div className="bg-blue-700 bg-opacity-30 p-2 rounded text-sm">
+                        <p className="font-semibold text-blue-300">Fixes:</p>
+                        <p>Dealer soft 17 behavior, bankroll challenges unlock, betting limits, insurance payouts, surrender functionality</p>
                       </div>
                     </div>
                   </div>

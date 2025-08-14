@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { GameMode } from '@/types/game'
 import { TableLevel, getTableConfiguration } from '@/lib/tableSystem'
 import { GameVariant, RULE_CONFIGURATIONS } from '@/lib/ruleVariations'
@@ -7,10 +8,11 @@ import { VariantSelector } from './VariantSelector'
 import { useGameStore } from '@/store/gameStore'
 
 interface TitleScreenProps {
-  onModeSelect: (mode: GameMode) => void
+  onModeSelect?: (mode: GameMode) => void
 }
 
-export function TitleScreen({ onModeSelect }: TitleScreenProps) {
+export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
+  const router = useRouter()
   const [showTableSelector, setShowTableSelector] = useState(false)
   const [showVariantSelector, setShowVariantSelector] = useState(false)
   const [showTutorialDropdown, setShowTutorialDropdown] = useState(false)
@@ -58,7 +60,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
         {/* Game Mode Buttons */}
         <div className="space-y-4 max-w-md mx-auto">
           <button
-            onClick={() => onModeSelect('normal')}
+            onClick={() => router.push('/play')}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-xl">Play Game</div>
@@ -83,7 +85,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
               <div className="absolute top-full left-0 right-0 mt-2 bg-blue-700 rounded-lg shadow-xl z-50 overflow-hidden">
                 <button
                   onClick={() => {
-                    onModeSelect('tutorial')
+                    router.push('/tutorial-basic')
                     setShowTutorialDropdown(false)
                   }}
                   className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors border-b border-blue-600"
@@ -94,8 +96,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
                 
                 <button
                   onClick={() => {
-                    startVariantTutorial('vegas')
-                    onModeSelect('tutorial')
+                    router.push('/tutorial-vegas')
                     setShowTutorialDropdown(false)
                   }}
                   className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors border-b border-blue-600"
@@ -106,8 +107,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
                 
                 <button
                   onClick={() => {
-                    startVariantTutorial('european')
-                    onModeSelect('tutorial')
+                    router.push('/tutorial-european')
                     setShowTutorialDropdown(false)
                   }}
                   className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors border-b border-blue-600"
@@ -118,8 +118,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
                 
                 <button
                   onClick={() => {
-                    startVariantTutorial('atlantic_city')
-                    onModeSelect('tutorial')
+                    router.push('/tutorial-atlantic-city')
                     setShowTutorialDropdown(false)
                   }}
                   className="w-full px-6 py-3 text-left hover:bg-blue-600 transition-colors"
@@ -132,7 +131,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
           </div>
 
           <button
-            onClick={() => onModeSelect('easy')}
+            onClick={() => router.push('/easy-mode')}
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-xl">Easy Mode</div>
@@ -140,7 +139,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
           </button>
 
           <button
-            onClick={() => onModeSelect('multiplayer')}
+            onClick={() => router.push('/multiplayer')}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-xl">Multiplayer</div>
@@ -148,7 +147,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
           </button>
 
           <button
-            onClick={() => onModeSelect('challenges')}
+            onClick={() => router.push('/challenges')}
             className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-xl">🎯 Bankroll Challenges</div>
@@ -156,7 +155,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
           </button>
 
           <button
-            onClick={() => onModeSelect('tournaments')}
+            onClick={() => router.push('/tournaments')}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-xl">🏆 Tournaments</div>
@@ -165,28 +164,28 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
 
 
           <button
-            onClick={() => onModeSelect('stats')}
+            onClick={() => router.push('/stats')}
             className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-lg">🏆 Stats & Achievements</div>
           </button>
 
           <button
-            onClick={() => onModeSelect('help')}
+            onClick={() => router.push('/help')}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-lg">📖 Rules & Strategy</div>
           </button>
 
           <button
-            onClick={() => onModeSelect('saveload')}
+            onClick={() => router.push('/save-load')}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-lg">💾 Save & Load</div>
           </button>
 
           <button
-            onClick={() => onModeSelect('reset')}
+            onClick={() => onModeSelect?.('reset')}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
           >
             <div className="text-lg">🔄 Reset Progress</div>
@@ -224,7 +223,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps) {
 
         {/* Footer */}
         <div className="mt-8 text-green-300 text-sm">
-          Version 1.0
+          Version 1.1
         </div>
       </div>
 

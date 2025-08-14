@@ -9,9 +9,7 @@ import {
 } from '@/types/multiplayer'
 import { GameAction } from '@/types/game'
 import { MultiplayerGameEngine } from '@/lib/multiplayerGameEngine'
-import { MultiplayerService } from '@/lib/firebase/multiplayer'
-import { doc, updateDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
+import { MultiplayerService } from '@/lib/supabase/multiplayer'
 
 interface MultiplayerStore extends MultiplayerState {
   // Service instance
@@ -290,15 +288,32 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       // Process bet through game engine
       const updatedGameState = MultiplayerGameEngine.processBet(currentGame, userId, amount)
       
-      // Update Firestore
-      const gameRef = doc(db, 'games', currentTable.id)
-      await updateDoc(gameRef, updatedGameState)
+      // Import Supabase dynamically
+      const { supabase } = await import('@/lib/supabase/config')
+      
+      if (!supabase) {
+        console.warn('Demo mode: Skipping bet update')
+        return
+      }
+      
+      // Update Supabase
+      const { error } = await supabase
+        .from('game_states')
+        .update(updatedGameState)
+        .eq('table_id', currentTable.id)
+      
+      if (error) {
+        throw error
+      }
       
       // Check if all players have bet and start dealing
       const playersWithBets = updatedGameState.players.filter(p => p.bet > 0)
       if (playersWithBets.length === updatedGameState.players.length) {
         const dealingState = MultiplayerGameEngine.startDealing(updatedGameState)
-        await updateDoc(gameRef, dealingState)
+        await supabase
+          .from('game_states')
+          .update(dealingState)
+          .eq('table_id', currentTable.id)
       }
     } catch (error) {
       console.error('Failed to place bet:', error)
@@ -317,19 +332,35 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       // Process action through game engine
       const updatedGameState = MultiplayerGameEngine.processPlayerAction(currentGame, userId, action)
       
+      // Import Supabase dynamically
+      const { supabase } = await import('@/lib/supabase/config')
+      
+      if (!supabase) {
+        console.warn('Demo mode: Skipping player action update')
+        return
+      }
+      
       // If we moved to dealer phase, process dealer logic
       if (updatedGameState.phase === 'dealer') {
         // Wait a moment for dramatic effect
         setTimeout(async () => {
           const finalState = MultiplayerGameEngine.calculateResults(updatedGameState)
-          const gameRef = doc(db, 'games', currentTable.id)
-          await updateDoc(gameRef, finalState)
+          await supabase
+            .from('game_states')
+            .update(finalState)
+            .eq('table_id', currentTable.id)
         }, 2000)
       }
       
-      // Update Firestore
-      const gameRef = doc(db, 'games', currentTable.id)
-      await updateDoc(gameRef, updatedGameState)
+      // Update Supabase
+      const { error } = await supabase
+        .from('game_states')
+        .update(updatedGameState)
+        .eq('table_id', currentTable.id)
+      
+      if (error) {
+        throw error
+      }
       
     } catch (error) {
       console.error('Failed to process player action:', error)
@@ -348,9 +379,23 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       // Initialize new round
       const newRoundState = MultiplayerGameEngine.initializeRound(currentGame, currentTable.settings)
       
-      // Update Firestore
-      const gameRef = doc(db, 'games', currentTable.id)
-      await updateDoc(gameRef, newRoundState)
+      // Import Supabase dynamically
+      const { supabase } = await import('@/lib/supabase/config')
+      
+      if (!supabase) {
+        console.warn('Demo mode: Skipping new round update')
+        return
+      }
+      
+      // Update Supabase
+      const { error } = await supabase
+        .from('game_states')
+        .update(newRoundState)
+        .eq('table_id', currentTable.id)
+      
+      if (error) {
+        throw error
+      }
       
     } catch (error) {
       console.error('Failed to start new round:', error)
@@ -362,49 +407,75 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     try {
       set({ connectionStatus: 'connecting' })
       
-      // Dynamically import Firebase and services
-      const { auth, ensureAuthenticated } = await import('@/lib/firebase/config')
-      const { MultiplayerService } = await import('@/lib/firebase/multiplayer')
+      // Dynamically import Supabase services
+      const { supabase, ensureAuthenticated } = await import('@/lib/supabase/config')
+      const { MultiplayerService } = await import('@/lib/supabase/multiplayer')
       
       // Initialize service
       const service = new MultiplayerService()
       set({ service })
       
-      // Set up auth state listener
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          set({ 
-            userId: user.uid,
-            playerName: user.displayName || `Player_${user.uid.slice(0, 6)}`,
-            connectionStatus: 'connected'
-          })
+      // Set up auth state listener for Supabase
+      if (supabase && supabase.auth) {
+        supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+          const user = session?.user
           
-          // Subscribe to available tables
-          try {
-            const unsubscribe = service.subscribeToAvailableTables((tables) => {
-              set({ availableTables: tables })
-            })
-            // Store unsubscribe function for cleanup
-            service.tablesUnsubscribe = unsubscribe
-          } catch (error) {
-            console.warn('Failed to subscribe to available tables:', error)
-          }
-        } else {
-          // Try to sign in anonymously for multiplayer features
-          try {
-            await ensureAuthenticated()
-          } catch (error) {
-            console.warn('Failed to authenticate anonymously:', error)
+          if (user) {
             set({ 
-              userId: '',
-              playerName: '',
-              connectionStatus: 'disconnected',
-              currentTable: null,
-              currentGame: null
+              userId: user.id,
+              playerName: user.email || `Player_${user.id.slice(0, 6)}`,
+              connectionStatus: 'connected'
+            })
+            
+            // Subscribe to available tables
+            try {
+              const unsubscribe = service.subscribeToAvailableTables((tables) => {
+                set({ availableTables: tables })
+              })
+              // Store unsubscribe function for cleanup
+              service.tablesUnsubscribe = unsubscribe
+            } catch (error) {
+              console.warn('Failed to subscribe to available tables:', error)
+            }
+          } else {
+            // Try to sign in anonymously for multiplayer features
+            try {
+              const authenticatedUser = await ensureAuthenticated()
+              if (authenticatedUser) {
+                set({ 
+                  userId: authenticatedUser.id,
+                  playerName: authenticatedUser.email || `Player_${authenticatedUser.id.slice(0, 6)}`,
+                  connectionStatus: 'connected'
+                })
+              }
+            } catch (error) {
+              console.warn('Failed to authenticate anonymously:', error)
+              set({ 
+                userId: '',
+                playerName: '',
+                connectionStatus: 'disconnected',
+                currentTable: null,
+                currentGame: null
+              })
+            }
+          }
+        })
+      } else {
+        // Demo mode or Supabase not available - create mock user
+        try {
+          const authenticatedUser = await ensureAuthenticated()
+          if (authenticatedUser) {
+            set({ 
+              userId: authenticatedUser.id,
+              playerName: authenticatedUser.email || `Player_${authenticatedUser.id.slice(0, 6)}`,
+              connectionStatus: 'connected'
             })
           }
+        } catch (error) {
+          console.warn('Failed to authenticate in demo mode:', error)
+          set({ connectionStatus: 'error' })
         }
-      })
+      }
       
     } catch (error) {
       console.error('Failed to initialize multiplayer:', error)

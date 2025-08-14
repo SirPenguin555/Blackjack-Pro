@@ -7,6 +7,7 @@ import { Hand } from './Hand'
 import { ChipSelector } from './ChipSelector'
 import { GameActions } from './GameActions'
 import { CHIP_DENOMINATIONS } from '@/store/gameStore'
+import { TableLevel } from '@/types/game'
 import { Avatar } from './Avatar'
 import { usePlayerTimeout } from '@/hooks/usePlayerTimeout'
 import { useConnectionRecovery } from '@/hooks/useConnectionRecovery'
@@ -190,6 +191,8 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
                         })
                       }}
                       maxBet={currentPlayer.chips}
+                      tableLevel={TableLevel.BEGINNER}
+                      playerChips={currentPlayer.chips}
                     />
                     <button
                       disabled={currentPlayer.bet === 0}

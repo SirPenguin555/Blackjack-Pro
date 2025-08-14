@@ -10,6 +10,7 @@ import { achievementEngine, Achievement } from '@/lib/achievementSystem'
 import { playerProfileService } from '@/lib/PlayerProfileService'
 import { ChallengeResult, bankrollChallengeEngine } from '@/lib/bankrollChallenges'
 import { tournamentEngine } from '@/lib/tournamentSystem'
+import { TABLE_CONFIGURATIONS } from '@/lib/tableSystem'
 
 export const CHIP_DENOMINATIONS: ChipDenomination[] = [
   { value: 1, color: 'bg-white border-gray-400 text-black', label: '$1' },
@@ -204,6 +205,18 @@ export const useGameStore = create<GameStore>((set, get) => {
     const playerIndex = state.players.findIndex(p => p.id === playerId)
     
     if (playerIndex === -1) return
+
+    // Check table betting limits
+    const tableConfig = TABLE_CONFIGURATIONS[state.currentTableLevel]
+    const player = state.players[playerIndex]
+    
+    // Allow all-in betting if player has less than minimum bet but more than 0 chips
+    const isAllInBet = player.chips > 0 && player.chips < tableConfig.minBet && amount === player.chips
+    
+    if (!isAllInBet && (amount < tableConfig.minBet || amount > tableConfig.maxBet)) {
+      // Bet outside table limits (unless it's a valid all-in bet)
+      return
+    }
 
     // Check if bet is allowed by active challenge rules
     const activeChallenge = bankrollChallengeEngine.getActiveChallenge()
@@ -558,6 +571,9 @@ export const useGameStore = create<GameStore>((set, get) => {
         const { card, remainingDeck } = dealCard(currentDeck)
         currentDeck = remainingDeck
         currentDealerHand = addCardToHand(currentDealerHand, card)
+        
+        // Ensure all cards are visible for proper value calculation
+        currentDealerHand = createHand(currentDealerHand.cards.map(card => ({ ...card, hidden: false })))
 
         set({
           deck: currentDeck,

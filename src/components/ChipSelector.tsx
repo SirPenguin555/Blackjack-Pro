@@ -1,5 +1,6 @@
-import { ChipDenomination } from '@/types/game'
+import { ChipDenomination, TableLevel } from '@/types/game'
 import { useState, useEffect } from 'react'
+import { TABLE_CONFIGURATIONS } from '@/lib/tableSystem'
 
 interface ChipSelectorProps {
   denominations: ChipDenomination[]
@@ -8,9 +9,11 @@ interface ChipSelectorProps {
   maxBet: number
   disabled?: boolean
   isWinning?: boolean // Add animation for winning chips
+  tableLevel?: TableLevel // Add table level for quick bet buttons
+  playerChips?: number // Add player chips for all-in logic
 }
 
-export function ChipSelector({ denominations, selectedBet, onBetChange, maxBet, disabled = false, isWinning = false }: ChipSelectorProps) {
+export function ChipSelector({ denominations, selectedBet, onBetChange, maxBet, disabled = false, isWinning = false, tableLevel, playerChips }: ChipSelectorProps) {
   const [animatingChips, setAnimatingChips] = useState<Set<number>>(new Set())
   const [valueAnimation, setValueAnimation] = useState(false)
 
@@ -35,6 +38,17 @@ export function ChipSelector({ denominations, selectedBet, onBetChange, maxBet, 
   const clearBet = () => {
     onBetChange(0)
     triggerValueAnimation()
+  }
+
+  const setBet = (amount: number) => {
+    if (amount <= maxBet) {
+      onBetChange(amount)
+      triggerValueAnimation()
+    }
+  }
+
+  const getTableConfig = () => {
+    return tableLevel ? TABLE_CONFIGURATIONS[tableLevel] : null
   }
 
   const triggerValueAnimation = () => {
@@ -78,11 +92,64 @@ export function ChipSelector({ denominations, selectedBet, onBetChange, maxBet, 
         ))}
       </div>
 
-      <div className="flex space-x-2">
+      <div className="flex flex-wrap gap-2 justify-center">
+        {/* Quick bet buttons based on table level */}
+        {(() => {
+          const tableConfig = getTableConfig()
+          if (!tableConfig) return null
+          
+          const quickBets = []
+          
+          // Show All In button if player has less than minimum bet but more than 0 chips
+          if (playerChips && playerChips > 0 && playerChips < tableConfig.minBet) {
+            quickBets.push(
+              <button
+                key="all-in"
+                onClick={() => setBet(playerChips)}
+                disabled={disabled}
+                className="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth active:animate-buttonPress"
+              >
+                All In (${playerChips})
+              </button>
+            )
+          } else {
+            // Only show minimum bet button if player can afford it
+            quickBets.push(
+              <button
+                key="min-bet"
+                onClick={() => setBet(tableConfig.minBet)}
+                disabled={disabled || tableConfig.minBet > maxBet}
+                className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth active:animate-buttonPress"
+              >
+                Min (${tableConfig.minBet})
+              </button>
+            )
+          }
+          
+          // For beginner table, add $1 increment button if not already available as chip
+          if (tableLevel === TableLevel.BEGINNER) {
+            const hasOneChip = denominations.some(chip => chip.value === 1)
+            if (!hasOneChip) {
+              quickBets.push(
+                <button
+                  key="one-dollar"
+                  onClick={() => addToBet(1)}
+                  disabled={disabled || selectedBet + 1 > maxBet}
+                  className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth active:animate-buttonPress"
+                >
+                  +$1
+                </button>
+              )
+            }
+          }
+          
+          return quickBets
+        })()}
+        
         <button
           onClick={clearBet}
           disabled={disabled || selectedBet === 0}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth active:animate-buttonPress"
+          className="px-3 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-smooth active:animate-buttonPress"
         >
           Clear
         </button>
