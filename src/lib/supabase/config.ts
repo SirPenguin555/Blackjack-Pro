@@ -90,7 +90,7 @@ try {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: false
+          detectSessionInUrl: true
         }
       }
     )

@@ -8,6 +8,8 @@ import { createRuleSet, GameVariant, RuleSet } from '@/lib/ruleVariations'
 import { statsTracker } from '@/lib/StatsTracker'
 import { achievementEngine, Achievement } from '@/lib/achievementSystem'
 import { playerProfileService } from '@/lib/PlayerProfileService'
+import { authService } from '@/lib/supabase/auth'
+import { gameDataService } from '@/lib/supabase/gameDataService'
 import { ChallengeResult, bankrollChallengeEngine } from '@/lib/bankrollChallenges'
 import { tournamentEngine } from '@/lib/tournamentSystem'
 import { TABLE_CONFIGURATIONS } from '@/lib/tableSystem'
@@ -70,8 +72,112 @@ interface GameStore extends GameState {
   clearChallengeResult: () => void
 }
 
-// Load initial data from player profile
-const loadInitialProfile = () => {
+// Helper function to save game data (either to localStorage or account)
+const saveGameData = async (chips: number, stats: GameStats, tableLevel: TableLevel, variant: GameVariant) => {
+  try {
+    const user = await authService.getCurrentUser()
+    
+    if (user) {
+      // Save to account
+      const detailedStats = statsTracker.getStatisticsSummary()
+      const achievements = achievementEngine.getUnlockedAchievements()
+      const achievementProgress = achievementEngine.getAchievementProgress()
+      const profile = playerProfileService.loadProfile()
+      
+      const gameData = {
+        total_chips: chips,
+        current_table_level: tableLevel,
+        current_game_variant: variant,
+        total_hands_played: stats.handsPlayed || 0,
+        hands_won: stats.handsWon || 0,
+        hands_lost: stats.handsLost || 0,
+        hands_pushed: stats.handsPushed || 0,
+        blackjacks_hit: stats.blackjacks || 0,
+        total_winnings: stats.totalWinnings || 0,
+        total_losses: 0, // Add if needed
+        biggest_win: 0, // Add if needed
+        biggest_loss: 0, // Add if needed
+        winning_streak: 0, // Add if needed
+        current_streak: 0, // Add if needed
+        longest_winning_streak: stats.longestWinStreak || 0,
+        hands_by_variant: detailedStats?.handsByVariant || {},
+        hands_by_table_level: detailedStats?.handsByTableLevel || {},
+        strategy_accuracy: detailedStats?.strategyAccuracy || {},
+        betting_patterns: detailedStats?.bettingPatterns || {},
+        achievements_unlocked: achievements.map(a => a.id),
+        achievement_progress: achievementProgress,
+        tables_unlocked: profile.tablesUnlocked || ['beginner'],
+        variants_unlocked: profile.variantsUnlocked || ['vegas'],
+        tutorial_progress: profile.tutorialProgress || {},
+        multiplayer_games_played: 0, // Will be updated by multiplayer system
+        multiplayer_games_won: 0,
+        multiplayer_tables_hosted: 0,
+        multiplayer_total_winnings: 0
+      }
+      
+      await gameDataService.saveUserGameData(user.id, gameData)
+    } else {
+      // Save to localStorage (fallback)
+      playerProfileService.updateChips(chips)
+      playerProfileService.updateStats(stats)
+      playerProfileService.updateTableLevel(tableLevel)
+      playerProfileService.updateGameVariant(variant)
+    }
+  } catch (error) {
+    console.error('Failed to save game data:', error)
+    // Fallback to localStorage
+    playerProfileService.updateChips(chips)
+    playerProfileService.updateStats(stats)
+    playerProfileService.updateTableLevel(tableLevel)
+    playerProfileService.updateGameVariant(variant)
+  }
+}
+
+// Load initial data from player profile or account
+const loadInitialProfile = async () => {
+  try {
+    const user = await authService.getCurrentUser()
+    
+    if (user) {
+      // Load from account
+      const gameData = await gameDataService.loadUserGameData(user.id)
+      
+      if (gameData) {
+        // Update local systems with account data
+        if (gameData.achievements_unlocked) {
+          achievementEngine.loadAchievements(gameData.achievements_unlocked, gameData.achievement_progress || {})
+        }
+        
+        return {
+          chips: gameData.total_chips,
+          currentTableLevel: gameData.current_table_level as TableLevel,
+          currentGameVariant: gameData.current_game_variant as GameVariant,
+          stats: {
+            handsPlayed: gameData.total_hands_played,
+            roundsPlayed: 0, // Not stored separately
+            handsWon: gameData.hands_won,
+            handsLost: gameData.hands_lost,
+            handsPushed: gameData.hands_pushed,
+            blackjacks: gameData.blackjacks_hit,
+            totalWinnings: gameData.total_winnings,
+            loansTaken: 0, // Add if needed
+            longestWinStreak: gameData.longest_winning_streak
+          },
+          tablesUnlocked: gameData.tables_unlocked || ['beginner'],
+          variantsUnlocked: gameData.variants_unlocked || ['vegas'],
+          tutorialProgress: gameData.tutorial_progress || {}
+        }
+      } else {
+        // Migrate localStorage data to account
+        await gameDataService.migrateLocalStorageToAccount(user.id)
+        return playerProfileService.loadProfile()
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load account data:', error)
+  }
+  
+  // Fallback to localStorage
   return playerProfileService.loadProfile()
 }
 
@@ -96,8 +202,36 @@ const createInitialPlayer = (name: string, position: number, chips?: number): Pl
 })
 
 export const useGameStore = create<GameStore>((set, get) => {
-  // Load initial profile data
-  const initialProfile = loadInitialProfile()
+  // Load initial profile data synchronously (will be updated async)
+  const initialProfile = playerProfileService.loadProfile()
+  
+  // Load account data asynchronously
+  loadInitialProfile().then(profile => {
+    const state = get()
+    set({
+      players: [createInitialPlayer('Player 1', 0, profile.chips)],
+      currentTableLevel: profile.currentTableLevel,
+      currentGameVariant: profile.currentGameVariant,
+      rules: createRuleSet(profile.currentGameVariant),
+      stats: profile.stats
+    })
+    
+    // Update PlayerProfileService with loaded data for backward compatibility
+    playerProfileService.updateChips(profile.chips)
+    playerProfileService.updateStats(profile.stats)
+    playerProfileService.updateTableLevel(profile.currentTableLevel)
+    playerProfileService.updateGameVariant(profile.currentGameVariant)
+    
+    if (profile.tablesUnlocked) {
+      playerProfileService.loadProfile().tablesUnlocked = profile.tablesUnlocked
+    }
+    if (profile.variantsUnlocked) {
+      playerProfileService.loadProfile().variantsUnlocked = profile.variantsUnlocked
+    }
+    if (profile.tutorialProgress) {
+      playerProfileService.loadProfile().tutorialProgress = profile.tutorialProgress
+    }
+  }).catch(console.error)
   
   return {
     // Initial state
@@ -174,16 +308,28 @@ export const useGameStore = create<GameStore>((set, get) => {
     set({ rules })
   },
   setTableLevel: (level: TableLevel) => {
+    const state = get()
     set({ currentTableLevel: level })
-    playerProfileService.updateTableLevel(level)
+    
+    // Save updated table level
+    const mainPlayer = state.players[0]
+    if (mainPlayer) {
+      saveGameData(mainPlayer.chips, state.stats, level, state.currentGameVariant)
+    }
   },
   setGameVariant: (variant: GameVariant) => {
+    const state = get()
     const rules = createRuleSet(variant)
     set({ 
       currentGameVariant: variant,
       rules 
     })
-    playerProfileService.updateGameVariant(variant)
+    
+    // Save updated variant
+    const mainPlayer = state.players[0]
+    if (mainPlayer) {
+      saveGameData(mainPlayer.chips, state.stats, state.currentTableLevel, variant)
+    }
   },
   initializeGame: () => {
     const state = get()
@@ -739,8 +885,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Save player progress after each round
     const mainPlayer = updatedPlayers[0]
     if (mainPlayer) {
-      playerProfileService.updateChips(mainPlayer.chips)
-      playerProfileService.updateStats(updatedStats)
+      saveGameData(mainPlayer.chips, updatedStats, state.currentTableLevel, state.currentGameVariant)
       
       // Update bankroll challenge progress if active
       const activeChallenge = bankrollChallengeEngine.getActiveChallenge()
@@ -767,7 +912,7 @@ export const useGameStore = create<GameStore>((set, get) => {
             set({ players: updatedPlayersWithBonus })
             
             // Update saved chips
-            playerProfileService.updateChips(updatedPlayersWithBonus[0].chips)
+            saveGameData(updatedPlayersWithBonus[0].chips, updatedStats, state.currentTableLevel, state.currentGameVariant)
           }
         }
       }
@@ -971,6 +1116,9 @@ export const useGameStore = create<GameStore>((set, get) => {
       currentGameVariant: 'vegas',
       rules: createRuleSet('vegas')
     })
+    
+    // Save reset progress
+    saveGameData(250, newStats, 'beginner', 'vegas')
   },
 
   recordMenuExit: () => {
@@ -1029,8 +1177,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     // Save updated chips and stats
     const mainPlayer = updatedPlayers[0]
     if (mainPlayer) {
-      playerProfileService.updateChips(mainPlayer.chips)
-      playerProfileService.updateStats(updatedStats)
+      saveGameData(mainPlayer.chips, updatedStats, state.currentTableLevel, state.currentGameVariant)
     }
   },
 

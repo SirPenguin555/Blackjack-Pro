@@ -5,7 +5,9 @@ import { TableLevel, getTableConfiguration } from '@/lib/tableSystem'
 import { GameVariant, RULE_CONFIGURATIONS } from '@/lib/ruleVariations'
 import { TableSelector } from './TableSelector'
 import { VariantSelector } from './VariantSelector'
+import { AuthModal } from './auth/AuthModal'
 import { useGameStore } from '@/store/gameStore'
+import { authService, AuthUser } from '@/lib/supabase/auth'
 
 interface TitleScreenProps {
   onModeSelect?: (mode: GameMode) => void
@@ -16,7 +18,9 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
   const [showTableSelector, setShowTableSelector] = useState(false)
   const [showVariantSelector, setShowVariantSelector] = useState(false)
   const [showTutorialDropdown, setShowTutorialDropdown] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
+  const [user, setUser] = useState<AuthUser | null>(null)
   
   const { 
     currentTableLevel, 
@@ -39,6 +43,38 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
     }
   }, [currentTableLevel, currentGameVariant])
 
+  // Load user data and set up auth listener
+  useEffect(() => {
+    const loadUser = async () => {
+      const currentUser = await authService.getCurrentUser()
+      console.log('TitleScreen: Initial user load:', currentUser?.profile?.username || 'no user')
+      setUser(currentUser)
+    }
+    
+    loadUser()
+
+    // Listen for auth state changes
+    const unsubscribe = authService.onAuthStateChange((newUser) => {
+      console.log('TitleScreen: Auth state change received:', newUser?.profile?.username || 'no user')
+      setUser(newUser)
+    })
+
+    return unsubscribe
+  }, [])
+
+  const handleAuthSuccess = async () => {
+    console.log('TitleScreen: handleAuthSuccess called')
+    // The auth state change listener should handle the user update
+    // We just need to ensure we reload the current user
+    try {
+      const currentUser = await authService.getCurrentUser()
+      console.log('TitleScreen: Loaded user after auth success:', currentUser?.profile?.username || 'no user')
+      setUser(currentUser)
+    } catch (error) {
+      console.error('TitleScreen: Failed to refresh user after auth:', error)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full text-center">
@@ -56,6 +92,39 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
             Master the art of Blackjack with authentic casino rules, interactive tutorials, and progressive gameplay
           </p>
         </div>
+
+        {/* Authentication Button */}
+        <div className="mb-6 max-w-md mx-auto">
+          {user && user.profile?.username ? (
+            <button
+              onClick={() => router.push('/account')}
+              className="w-full bg-gray-700 hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
+            >
+              <div className="text-lg">Welcome back, {user.profile.username}!</div>
+              <div className="text-sm opacity-80">View account & statistics</div>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-3 px-6 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
+            >
+              <div className="text-lg">👤 Sign In / Sign Up</div>
+              <div className="text-sm opacity-80">Save progress & play multiplayer</div>
+            </button>
+          )}
+        </div>
+
+        {/* Promotional Text for Non-Authenticated Users */}
+        {(!user || !user.profile?.username) && (
+          <div className="mb-6 max-w-md mx-auto">
+            <div className="bg-blue-900 bg-opacity-50 rounded-lg p-4 border border-blue-400 border-opacity-30">
+              <p className="text-blue-200 text-sm">
+                <strong>Sign up to unlock:</strong> Access your stats and achievements, 
+                save and load your data automatically, and play multiplayer modes with friends!
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Game Mode Buttons */}
         <div className="space-y-4 max-w-md mx-auto">
@@ -139,11 +208,29 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
           </button>
 
           <button
-            onClick={() => router.push('/multiplayer')}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+            onClick={() => {
+              if (!user) {
+                setShowAuthModal(true)
+              } else if (!authService.isEmailVerified(user)) {
+                alert('Please verify your email address to access multiplayer features.')
+              } else {
+                router.push('/multiplayer')
+              }
+            }}
+            className={`w-full font-bold py-4 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105 ${
+              user && authService.isEmailVerified(user)
+                ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                : 'bg-gray-600 hover:bg-gray-700 text-gray-200'
+            }`}
           >
-            <div className="text-xl">Multiplayer</div>
-            <div className="text-sm opacity-90">Play with friends online</div>
+            <div className="text-xl">
+              Multiplayer {(!user || !authService.isEmailVerified(user)) && '🔒'}
+            </div>
+            <div className="text-sm opacity-90">
+              {!user ? 'Sign in required' : 
+               !authService.isEmailVerified(user) ? 'Email verification required' :
+               'Play with friends online'}
+            </div>
           </button>
 
           <button
@@ -163,12 +250,6 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
           </button>
 
 
-          <button
-            onClick={() => router.push('/stats')}
-            className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
-          >
-            <div className="text-lg">🏆 Stats & Achievements</div>
-          </button>
 
           <button
             onClick={() => router.push('/help')}
@@ -252,6 +333,14 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
           onClose={() => setShowVariantSelector(false)}
         />
       )}
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
+
     </div>
   )
 }

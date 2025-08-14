@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useMultiplayerStore } from '@/store/multiplayerStore'
 import { GameTable, TableSettings } from '@/types/multiplayer'
 import { CustomTableSettings } from './CustomTableSettings'
+import { authService, AuthUser } from '@/lib/supabase/auth'
 
 interface MultiplayerLobbyProps {
   onBack: () => void
@@ -28,6 +29,8 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
   const [showJoinByCodeForm, setShowJoinByCodeForm] = useState(false)
   const [showCustomSettings, setShowCustomSettings] = useState(false)
   const [selectedTable, setSelectedTable] = useState<GameTable | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [formData, setFormData] = useState({
@@ -80,26 +83,42 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
     setJoinByCodeData(prev => ({ ...prev, playerName: tempPlayerName }))
   }, [tempPlayerName])
 
-  // Initialize authentication for demo purposes
+  // Check authentication and email verification
   useEffect(() => {
-    const initAuth = async () => {
+    const checkAuth = async () => {
+      setIsCheckingAuth(true)
       try {
-        // Dynamically import Supabase only when needed
-        const { ensureAuthenticated } = await import('@/lib/supabase/config')
+        const currentUser = await authService.getCurrentUser()
+        setUser(currentUser)
         
-        // Ensure user is authenticated (will create anonymous user if needed)
-        await ensureAuthenticated()
+        if (!currentUser) {
+          setErrorMessage('You must be signed in to access multiplayer features.')
+          setConnectionStatus('error')
+          return
+        }
+        
+        if (!authService.isEmailVerified(currentUser)) {
+          setErrorMessage('You must verify your email address to access multiplayer features.')
+          setConnectionStatus('error')
+          return
+        }
+        
+        // Set player name from username and initialize multiplayer
+        if (currentUser.profile?.username) {
+          setPlayerName(currentUser.profile.username)
+        }
+        initialize()
         console.log('Successfully authenticated for multiplayer')
       } catch (error) {
-        console.error('Failed to initialize Supabase:', error)
-        // Set connection status to error so user sees appropriate message
+        console.error('Failed to check authentication:', error)
         setConnectionStatus('error')
         setErrorMessage(error instanceof Error ? error.message : 'Failed to initialize multiplayer features')
+      } finally {
+        setIsCheckingAuth(false)
       }
     }
     
-    initAuth()
-    initialize()
+    checkAuth()
   }, [initialize])
 
   // Cleanup inactive tables periodically
@@ -212,6 +231,14 @@ export function MultiplayerLobby({ onBack }: MultiplayerLobbyProps) {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-800 to-green-900 flex items-center justify-center">
+        <div className="text-white text-xl">Checking authentication...</div>
       </div>
     )
   }
