@@ -699,6 +699,54 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
                 <h2 className="text-2xl font-bold text-yellow-400 mb-4">📝 Patch Notes</h2>
                 
                 <div className="space-y-6">
+                  <div className="bg-blue-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold text-blue-400 mb-4">Version 1.2 - Complete Supabase Migration & Account System</h3>
+                    <div className="text-white space-y-3">
+                      <div className="bg-green-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-green-300">✅ Account System</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Complete user authentication with Supabase Auth</p>
+                          <p>• User profiles with persistent game data storage</p>
+                          <p>• Account page with comprehensive statistics and progression tracking</p>
+                          <p>• Email verification system for enhanced security</p>
+                          <p>• Progress syncing across devices when signed in</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-purple-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-purple-300">🗄️ Database Migration</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Migrated from Firebase to Supabase for better performance</p>
+                          <p>• Improved real-time multiplayer synchronization</p>
+                          <p>• Enhanced data security with Row Level Security (RLS)</p>
+                          <p>• Completely removed all Firebase dependencies</p>
+                          <p>• Optimized database queries for faster loading</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-blue-300">🔧 Technical Improvements</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Updated authentication flow for seamless user experience</p>
+                          <p>• Fixed account data loading issues and login failures</p>
+                          <p>• Improved error handling for network connectivity issues</p>
+                          <p>• Enhanced codebase organization and type safety</p>
+                          <p>• Updated documentation with comprehensive developer guide</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-yellow-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-yellow-300">📝 Notes</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Single-player mode still works without creating an account</p>
+                          <p>• Account creation provides cloud save and multiplayer access</p>
+                          <p>• All user data is securely encrypted and protected</p>
+                          <p>• Email verification required for multiplayer features</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-orange-800 bg-opacity-60 p-6 rounded-lg">
                     <h3 className="text-xl font-bold text-orange-400 mb-4">Version 1.1 - Navigation & Bug Fixes</h3>
                     <div className="text-white space-y-3">
