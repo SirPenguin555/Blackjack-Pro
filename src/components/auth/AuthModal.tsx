@@ -94,6 +94,15 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     try {
       if (mode === 'signin') {
         console.log('AuthModal: Starting sign in process')
+        
+        // Test connection first
+        const connectionTest = await authService.testConnection()
+        if (!connectionTest.connected) {
+          console.error('AuthModal: Database connection failed:', connectionTest.error)
+          setError(`Connection failed: ${connectionTest.error}`)
+          return
+        }
+        
         const result = await authService.signIn(formData.email, formData.password)
         if (result.error) {
           console.error('AuthModal: Sign in error:', result.error)

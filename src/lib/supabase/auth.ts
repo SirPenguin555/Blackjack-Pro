@@ -74,6 +74,34 @@ const PROFANITY_LIST = [
 
 export class AuthService {
   /**
+   * Test database connection
+   */
+  async testConnection(): Promise<{ connected: boolean; error?: string }> {
+    if (isDemoMode || !supabase) {
+      return { connected: false, error: 'Demo mode or no Supabase client' }
+    }
+
+    try {
+      console.log('Testing Supabase connection...')
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('count')
+        .limit(1)
+
+      if (error) {
+        console.error('Connection test failed:', error)
+        return { connected: false, error: error.message }
+      }
+
+      console.log('Connection test successful')
+      return { connected: true }
+    } catch (error: any) {
+      console.error('Connection test exception:', error)
+      return { connected: false, error: error.message || 'Connection failed' }
+    }
+  }
+
+  /**
    * Validate username format and availability
    */
   async validateUsername(username: string): Promise<{ isValid: boolean; error?: string }> {
@@ -279,8 +307,68 @@ export class AuthService {
       let profile = await this.getUserProfile(authData.user.id)
       
       if (!profile) {
-        console.warn('No profile found for user:', authData.user.id, '- this user may need profile creation')
-        return { error: 'Account data not found. Please try signing up again with a new account.' }
+        console.warn('No profile found for user:', authData.user.id, '- attempting to create profile')
+        
+        // Try to create a profile for this user (for backwards compatibility with existing accounts)
+        try {
+          const defaultUsername = authData.user.email?.split('@')[0] || `user_${authData.user.id.slice(0, 8)}`
+          
+          // First check if username is available
+          const usernameValidation = await this.validateUsername(defaultUsername)
+          const finalUsername = usernameValidation.isValid ? defaultUsername : `user_${authData.user.id.slice(0, 8)}`
+          
+          console.log('Creating profile with username:', finalUsername)
+          const { data: newProfile, error: createError } = await supabase
+            .rpc('create_user_profile', {
+              p_user_id: authData.user.id,
+              p_username: finalUsername,
+              p_email_verified: !!authData.user.email_confirmed_at
+            })
+
+          if (createError) {
+            console.error('Failed to create profile during sign-in:', createError)
+            // Try direct insert as fallback
+            const { data: directProfile, error: directError } = await supabase
+              .from('user_profiles')
+              .insert({
+                user_id: authData.user.id,
+                username: finalUsername,
+                email_verified: !!authData.user.email_confirmed_at,
+                preferred_table_level: 'beginner',
+                preferred_game_variant: 'vegas'
+              })
+              .select()
+              .single()
+            
+            if (directError) {
+              console.error('Direct profile creation also failed:', directError)
+              return { error: 'Account setup failed. Please try creating a new account or contact support.' }
+            }
+            
+            profile = directProfile
+            console.log('Profile created via direct insert:', profile.username)
+          } else {
+            profile = newProfile
+            console.log('Profile created via function:', profile.username)
+          }
+
+          // Also try to create game data
+          try {
+            await supabase.rpc('create_user_game_data', {
+              p_user_id: authData.user.id,
+              p_total_chips: 1000,
+              p_current_table_level: 'beginner',
+              p_current_game_variant: 'vegas'
+            })
+          } catch (gameDataError) {
+            console.warn('Game data creation failed, will use defaults:', gameDataError)
+            // Game data failure is not critical, user can still sign in
+          }
+
+        } catch (error) {
+          console.error('Error creating profile during sign-in:', error)
+          return { error: 'Account setup failed. Please contact support.' }
+        }
       }
 
       console.log('Profile loaded:', profile.username)
@@ -387,19 +475,33 @@ export class AuthService {
     }
 
     try {
+      console.log('Fetching profile for user:', userId)
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .single()
 
-      if (error || !data) {
-        // Profile doesn't exist - this shouldn't happen for properly signed up users
+      if (error) {
+        console.log('Profile fetch error:', error.message, error.code)
+        if (error.code === 'PGRST116') {
+          // No rows returned - profile doesn't exist
+          return undefined
+        }
+        // Other error - could be connection issue
+        console.error('Database error fetching profile:', error)
         return undefined
       }
 
+      if (!data) {
+        console.log('No profile data returned for user:', userId)
+        return undefined
+      }
+
+      console.log('Profile found:', data.username)
       return data
     } catch (error) {
+      console.error('Exception fetching profile:', error)
       return undefined
     }
   }

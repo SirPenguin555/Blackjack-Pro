@@ -18,6 +18,7 @@ if (typeof window !== 'undefined') {
     url: supabaseConfig.url,
     anonKey: supabaseConfig.anonKey.substring(0, 20) + '...',
     hasEnvUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasEnvAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     environment: process.env.NODE_ENV
   })
 }
