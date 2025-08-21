@@ -699,6 +699,55 @@ export function HelpScreen({ onBack }: HelpScreenProps) {
                 <h2 className="text-2xl font-bold text-yellow-400 mb-4">📝 Patch Notes</h2>
                 
                 <div className="space-y-6">
+                  <div className="bg-purple-800 bg-opacity-60 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold text-purple-400 mb-4">Version 1.3 - The Bugfix Update</h3>
+                    <div className="text-white space-y-3">
+                      <div className="bg-green-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-green-300">✅ Betting System Fixes</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Replaced chip clicking system with direct bet amount input box</p>
+                          <p>• Fixed all-in betting when player has low amount of money</p>
+                          <p>• Added special rule: players with less than $5 can go all-in on beginner table</p>
+                          <p>• Enhanced bet validation to prevent invalid betting amounts</p>
+                          <p>• Game now prevents starting with bets outside table limits</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-blue-300">🔧 Game Flow Improvements</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Fixed card disappearing issue when clicking continue button</p>
+                          <p>• Players must now collect winnings before starting next round</p>
+                          <p>• Winnings are displayed prominently and must be acknowledged</p>
+                          <p>• Improved game state management for smoother transitions</p>
+                          <p>• Cards remain visible throughout entire round completion</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-orange-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-orange-300">🏆 Progression System</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Table unlocking is now permanent once achieved</p>
+                          <p>• Fixed table unlock persistence across game sessions</p>
+                          <p>• Automatically checks for new table unlocks after each round</p>
+                          <p>• Enhanced tutorial text specific to each game variation</p>
+                          <p>• Improved achievement and progression tracking</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-yellow-700 bg-opacity-50 p-3 rounded">
+                        <p className="font-semibold text-yellow-300">📝 User Experience</p>
+                        <div className="text-sm mt-2 space-y-1">
+                          <p>• Cleaner, more intuitive betting interface</p>
+                          <p>• Better error messages and input validation</p>
+                          <p>• Improved visual feedback for bet amounts and limits</p>
+                          <p>• Enhanced game flow prevents common user confusion</p>
+                          <p>• More responsive and accessible betting controls</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-blue-800 bg-opacity-60 p-6 rounded-lg">
                     <h3 className="text-xl font-bold text-blue-400 mb-4">Version 1.2 - Complete Supabase Migration & Account System</h3>
                     <div className="text-white space-y-3">

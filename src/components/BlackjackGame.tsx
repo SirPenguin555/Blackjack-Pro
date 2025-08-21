@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGameStore, CHIP_DENOMINATIONS } from '@/store/gameStore'
+import { TABLE_CONFIGURATIONS } from '@/lib/tableSystem'
 import { GameAction } from '@/types/game'
 import { Hand } from './Hand'
-import { ChipSelector } from './ChipSelector'
+import { BetInput } from './BetInput'
 import { GameActions } from './GameActions'
 import { TitleScreen } from './TitleScreen'
 import { TutorialOverlay } from './TutorialOverlay'
@@ -59,7 +60,9 @@ export function BlackjackGame() {
     newlyUnlockedAchievements,
     clearNewAchievements,
     activeChallengeResult,
-    clearChallengeResult
+    clearChallengeResult,
+    collectWinnings,
+    checkTableUnlocks
   } = useGameStore()
 
   const currentPlayer = players[currentPlayerIndex]
@@ -149,9 +152,32 @@ export function BlackjackGame() {
   }
 
   const handleStartRound = () => {
-    if (mainPlayer && mainPlayer.bet > 0) {
-      dealInitialCards()
+    if (!mainPlayer || mainPlayer.bet <= 0) {
+      return
     }
+
+    // Get table configuration for validation
+    const tableConfig = TABLE_CONFIGURATIONS[currentTableLevel]
+    
+    // Check if player has enough chips for the bet
+    if (mainPlayer.bet > mainPlayer.chips) {
+      return // This should be prevented by BetInput, but double-check
+    }
+    
+    // Validate bet amount based on table and player situation
+    const minBet = currentTableLevel === 'beginner' && mainPlayer.chips < tableConfig.minBet ? 
+      Math.min(mainPlayer.chips, 1) : // Allow $1 or all chips if less than $1
+      tableConfig.minBet
+    
+    if (mainPlayer.bet < minBet) {
+      return // Invalid bet amount
+    }
+    
+    if (mainPlayer.bet > tableConfig.maxBet) {
+      return // Bet exceeds table maximum
+    }
+
+    dealInitialCards()
   }
 
   const handlePlayerAction = (action: GameAction) => {
@@ -162,6 +188,10 @@ export function BlackjackGame() {
 
   const handleNewRound = () => {
     startNewRound()
+  }
+
+  const handleCollectWinnings = () => {
+    collectWinnings()
   }
 
   const handleBackToMenu = () => {
@@ -338,14 +368,12 @@ export function BlackjackGame() {
             {phase === 'betting' && (
               <div className="space-y-4">
                 <div className={`rounded-lg p-2 ${animationClass} ${getHighlightClass('chips')}`}>
-                  <ChipSelector
-                    denominations={CHIP_DENOMINATIONS}
+                  <BetInput
                     selectedBet={mainPlayer.bet}
                     onBetChange={handleBetChange}
-                    maxBet={mainPlayer.chips}
-                    isWinning={phase === 'finished' && mainPlayer.lastHandWinnings !== undefined && mainPlayer.lastHandWinnings > 0}
-                    tableLevel={currentTableLevel}
                     playerChips={mainPlayer.chips}
+                    tableLevel={currentTableLevel}
+                    isWinning={phase === 'finished' && mainPlayer.lastHandWinnings !== undefined && mainPlayer.lastHandWinnings > 0}
                   />
                 </div>
                 <div className={`text-center ${getHighlightClass('cards')}`}>
@@ -387,12 +415,34 @@ export function BlackjackGame() {
                 <div className="text-white text-lg">
                   Round Complete!
                 </div>
-                <button
-                  onClick={handleNewRound}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  New Round
-                </button>
+                
+                {/* Show collect winnings button if player has winnings to collect */}
+                {mainPlayer.lastHandWinnings !== undefined && (
+                  <div className="space-y-3">
+                    <div className={`text-lg font-bold ${
+                      mainPlayer.lastHandWinnings > 0 ? 'text-green-400' : 
+                      mainPlayer.lastHandWinnings < 0 ? 'text-red-400' : 'text-yellow-400'
+                    }`}>
+                      {mainPlayer.lastHandWinnings > 0 ? '+' : ''}${mainPlayer.lastHandWinnings}
+                    </div>
+                    <button
+                      onClick={handleCollectWinnings}
+                      className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                    >
+                      Collect Winnings
+                    </button>
+                  </div>
+                )}
+                
+                {/* Show new round button only after winnings are collected */}
+                {mainPlayer.lastHandWinnings === undefined && (
+                  <button
+                    onClick={handleNewRound}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    New Round
+                  </button>
+                )}
               </div>
             )}
           </div>

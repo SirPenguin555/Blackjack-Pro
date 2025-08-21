@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react'
 import { useMultiplayerStore } from '@/store/multiplayerStore'
 import { MultiplayerPlayer, PlayerAction, ChatMessage } from '@/types/multiplayer'
 import { Hand } from './Hand'
-import { ChipSelector } from './ChipSelector'
+import { BetInput } from './BetInput'
 import { GameActions } from './GameActions'
-import { CHIP_DENOMINATIONS } from '@/store/gameStore'
 import { TableLevel } from '@/types/game'
 import { Avatar } from './Avatar'
 import { usePlayerTimeout } from '@/hooks/usePlayerTimeout'
@@ -181,9 +180,8 @@ export function MultiplayerGame({ onBack }: MultiplayerGameProps) {
               <div className="flex flex-col items-center space-y-6">
                 {currentGame.phase === 'betting' && currentPlayer && (
                   <div className="space-y-4">
-                    <ChipSelector
-                      denominations={CHIP_DENOMINATIONS}
-                      selectedBet={currentPlayer.bet}
+                    <BetInput
+                      currentBet={currentPlayer.bet}
                       onBetChange={(amount) => {
                         placeBet(amount).catch(error => {
                           console.error('Failed to place bet:', error)

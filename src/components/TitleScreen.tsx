@@ -304,7 +304,7 @@ export function TitleScreen({ onModeSelect }: TitleScreenProps = {}) {
 
         {/* Footer */}
         <div className="mt-8 text-green-300 text-sm">
-          Version 1.2
+          Version 1.3
         </div>
       </div>
 

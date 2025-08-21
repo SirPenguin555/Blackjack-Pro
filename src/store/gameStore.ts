@@ -8,6 +8,7 @@ import { createRuleSet, GameVariant, RuleSet } from '@/lib/ruleVariations'
 import { statsTracker } from '@/lib/StatsTracker'
 import { achievementEngine, Achievement } from '@/lib/achievementSystem'
 import { playerProfileService } from '@/lib/PlayerProfileService'
+import { tableUnlockService } from '@/lib/tableUnlockService'
 import { authService } from '@/lib/supabase/auth'
 import { gameDataService } from '@/lib/supabase/gameDataService'
 import { ChallengeResult, bankrollChallengeEngine } from '@/lib/bankrollChallenges'
@@ -45,6 +46,7 @@ interface GameStore extends GameState {
   dealerPlay: () => void
   finishRound: () => void
   startNewRound: () => void
+  collectWinnings: () => void
   addPlayer: (name: string) => void
   removePlayer: (playerId: string) => void
   resetStats: () => void
@@ -67,6 +69,9 @@ interface GameStore extends GameState {
   // Achievement actions
   checkAchievements: () => void
   clearNewAchievements: () => void
+  
+  // Table unlock actions
+  checkTableUnlocks: () => void
   
   // Challenge actions
   clearChallengeResult: () => void
@@ -887,6 +892,10 @@ export const useGameStore = create<GameStore>((set, get) => {
     if (mainPlayer) {
       saveGameData(mainPlayer.chips, updatedStats, state.currentTableLevel, state.currentGameVariant)
       
+      // Check for new achievements and table unlocks after each round
+      get().checkAchievements()
+      get().checkTableUnlocks()
+      
       // Update bankroll challenge progress if active
       const activeChallenge = bankrollChallengeEngine.getActiveChallenge()
       if (activeChallenge) {
@@ -954,6 +963,19 @@ export const useGameStore = create<GameStore>((set, get) => {
       currentPlayerIndex: 0,
       phase: 'betting',
       round: state.round + 1
+    })
+  },
+
+  // New function to collect winnings and allow next round
+  collectWinnings: () => {
+    const state = get()
+    const updatedPlayers = state.players.map(player => ({
+      ...player,
+      lastHandWinnings: undefined
+    }))
+    
+    set({
+      players: updatedPlayers
     })
   },
 
@@ -1238,6 +1260,26 @@ export const useGameStore = create<GameStore>((set, get) => {
 
   clearNewAchievements: () => {
     set({ newlyUnlockedAchievements: [] });
+  },
+
+  // Table unlock methods
+  checkTableUnlocks: () => {
+    const state = get()
+    const mainPlayer = state.players[0]
+    
+    if (!mainPlayer) return
+    
+    // Get all available tables based on current progress
+    const availableTables = tableUnlockService.getAvailableTables(mainPlayer.chips, state.stats)
+    const profile = playerProfileService.loadProfile()
+    
+    // Check each available table and permanently unlock it
+    availableTables.forEach(tableConfig => {
+      if (!profile.unlockedTables.includes(tableConfig.level)) {
+        console.log(`Unlocking table: ${tableConfig.name}`)
+        playerProfileService.unlockTable(tableConfig.level)
+      }
+    })
   },
 
   // Challenge methods

@@ -208,5 +208,5 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-**Version**: 1.2  
+**Version**: 1.3  
 **Last Updated**: August 2025
